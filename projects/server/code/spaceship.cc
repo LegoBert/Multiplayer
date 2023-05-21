@@ -43,7 +43,8 @@ namespace Game
         ParticleSystem::Instance()->AddEmitter(this->particleEmitterRight);
     }
 
-    void SpaceShip::Update(float dt)
+    void
+        SpaceShip::Update(float dt)
     {
         Mouse* mouse = Input::GetDefaultMouse();
         Keyboard* kbd = Input::GetDefaultKeyboard();
@@ -102,12 +103,10 @@ namespace Game
         this->particleEmitterRight->data.endSpeed = 0.0f + (3.0f * t);
         //this->particleEmitter->data.decayTime = 0.16f;//+ (0.01f  * t);
         //this->particleEmitter->data.randomTimeOffsetDist = 0.06f;/// +(0.01f * t);
-
-        // Update collider transform
-        Physics::SetTransform(collider, transform);
     }
 
-    bool SpaceShip::CheckCollisions()
+    bool
+        SpaceShip::CheckCollisions()
     {
         glm::mat4 rotation = (glm::mat4)orientation;
         bool hit = false;
@@ -119,7 +118,7 @@ namespace Game
             Physics::RaycastPayload payload = Physics::Raycast(position, dir, len);
 
             // debug draw collision rays
-            //Debug::DrawLine(pos, pos + dir * len, 1.0f, glm::vec4(0, 1, 0, 1), glm::vec4(0, 1, 0, 1), Debug::RenderMode::AlwaysOnTop);
+            Debug::DrawLine(pos, pos + dir * len, 1.0f, glm::vec4(0, 1, 0, 1), glm::vec4(0, 1, 0, 1), Debug::RenderMode::AlwaysOnTop);
 
             if (payload.hit && payload.collider != this->collider)
             {
@@ -131,7 +130,8 @@ namespace Game
         return hit;
     }
 
-    void SpaceShip::LoseALife()
+    void
+        SpaceShip::LoseALife()
     {
         lives--;
         if (lives <= 0)

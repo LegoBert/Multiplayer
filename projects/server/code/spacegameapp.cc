@@ -21,7 +21,6 @@
 #include <chrono>
 #include "spaceship.h"
 #include <vector>
-#include "enet/enet.h"
 
 using namespace Display;
 using namespace Render;
@@ -30,26 +29,27 @@ namespace Game
 {
 
     //------------------------------------------------------------------------------
-    
+    /**
+    */
     SpaceGameApp::SpaceGameApp()
     {
-        
-        
+        // empty
     }
 
     //------------------------------------------------------------------------------
-    
+    /**
+    */
     SpaceGameApp::~SpaceGameApp()
     {
-    
+        // empty
     }
 
     //------------------------------------------------------------------------------
-    
-    bool SpaceGameApp::Open()
+    /**
+    */
+    bool
+        SpaceGameApp::Open()
     {
-        
-
         App::Open();
         this->window = new Display::Window;
         this->window->SetSize(2500, 2000);
@@ -73,8 +73,10 @@ namespace Game
     }
 
     //------------------------------------------------------------------------------
-    
-    void SpaceGameApp::Run()
+    /**
+    */
+    void
+        SpaceGameApp::Run()
     {
         int w;
         int h;
@@ -189,69 +191,9 @@ namespace Game
         std::clock_t c_start = std::clock();
         double dt = 0.01667f;
 
-        //Connect to Client
-        if (enet_initialize() != 0)
-        {
-            fprintf(stderr, "An error Occured while initializing ENet!\n");
-            //return EXIT_FAILURE;
-        }
-
-        atexit(enet_deinitialize);
-
-        ENetHost* client;
-        client = enet_host_create(NULL, 1, 1, 0, 0);
-
-        if (client == NULL)
-        {
-            fprintf(stderr, "An error occurred while trying to create ENet client!\n");
-            //return EXIT_FAILURE;
-        }
-        ENetAddress address;
-        ENetEvent event;
-        ENetPeer* peer;
-
-        enet_address_set_host(&address, "130.240.54.37");
-        address.port = 7777;
-
-        peer = enet_host_connect(client, &address, 1, 0);
-        if (peer == NULL)
-        {
-            fprintf(stderr, "No available peers for initiating an ENEt connection! \n");
-            //return EXIT_FAILURE;
-        }
-        //Check if server has contacted us
-
-        if (enet_host_service(client, &event, 5000) > 0 && event.type == ENET_EVENT_TYPE_CONNECT)
-        {
-            puts("Connection successful");
-        }
-        else
-        {
-            enet_peer_reset(peer);
-            puts("Connection failed.");
-            //return EXIT_SUCCESS;
-        }
-
         // game loop
         while (this->window->IsOpen())
         {
-            /// <Event>
-            while (enet_host_service(client, &event, 0) > 0)
-            {
-                switch (event.type)
-                {
-                case ENET_EVENT_TYPE_RECEIVE:
-                    printf("A packet of length %u containing %s was received from %x:%u on channel %u.\n",
-                        event.packet->dataLength,
-                        event.packet->data,
-                        event.peer->address.host,
-                        event.peer->address.port,
-                        event.channelID);
-                    break;
-                }
-            }
-            /// </Event>
-
             auto timeStart = std::chrono::steady_clock::now();
             glClear(GL_DEPTH_BUFFER_BIT);
             glEnable(GL_DEPTH_TEST);
@@ -296,6 +238,7 @@ namespace Game
             Lasers.erase(std::remove_if(Lasers.begin(), Lasers.end(), [](Laser* laser) { return laser->marked_for_deletion; }), Lasers.end());
 
             RenderDevice::Draw(ship.model, ship.transform);
+            Physics::SetTransform(ship.collider, ship.transform);
 
             // Execute the entire rendering pipeline
             RenderDevice::Render(this->window, dt);
@@ -309,33 +252,22 @@ namespace Game
             if (kbd->pressed[Input::Key::Code::Escape])
                 this->Exit();
         }
-
-        //Disconnect
-        enet_peer_disconnect(peer, 0);
-        while (enet_host_service(client, &event, 3000) > 0)
-        {
-            switch (event.type)
-            {
-            case ENET_EVENT_TYPE_RECEIVE:
-                enet_packet_destroy(event.packet);
-                break;
-            case ENET_EVENT_TYPE_DISCONNECT:
-                puts("Disconnection succeeded.");
-                break;
-            }
-        }
     }
 
     //------------------------------------------------------------------------------
-    
-    void SpaceGameApp::Exit()
+    /**
+    */
+    void
+        SpaceGameApp::Exit()
     {
         this->window->Close();
     }
 
     //------------------------------------------------------------------------------
-    
-    void SpaceGameApp::RenderUI()
+    /**
+    */
+    void
+        SpaceGameApp::RenderUI()
     {
         if (this->window->IsOpen())
         {
