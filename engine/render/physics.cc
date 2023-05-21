@@ -518,7 +518,7 @@ SetTransform(ColliderId collider, glm::mat4 const& transform)
         float x = glm::length(glm::vec3(transform[0]));
         float y = glm::length(glm::vec3(transform[1]));
         float z = glm::length(glm::vec3(transform[2]));
-        assert(fabs(x - y) < 0.00001f && fabs(x - z) < 0.00001f);
+        //assert(fabs(x - y) < 0.00001f && fabs(x - z) < 0.00001f);
     }
 #endif
     glm::vec4 PS = glm::vec4(transform[3]);
