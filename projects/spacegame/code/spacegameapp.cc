@@ -210,8 +210,8 @@ namespace Game
         ENetEvent event;
         ENetPeer* peer;
 
-        enet_address_set_host(&address, "130.240.54.37");
-        address.port = 7777;
+        enet_address_set_host(&address, "192.168.1.103");
+        address.port = 7777; //same here
 
         peer = enet_host_connect(client, &address, 1, 0);
         if (peer == NULL)
@@ -219,8 +219,8 @@ namespace Game
             fprintf(stderr, "No available peers for initiating an ENEt connection! \n");
             //return EXIT_FAILURE;
         }
-        //Check if server has contacted us
 
+        //Check if server has contacted us
         if (enet_host_service(client, &event, 5000) > 0 && event.type == ENET_EVENT_TYPE_CONNECT)
         {
             puts("Connection successful");
@@ -229,7 +229,6 @@ namespace Game
         {
             enet_peer_reset(peer);
             puts("Connection failed.");
-            //return EXIT_SUCCESS;
         }
 
         // game loop

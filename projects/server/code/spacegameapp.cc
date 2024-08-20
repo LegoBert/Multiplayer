@@ -21,6 +21,7 @@
 #include <chrono>
 #include "spaceship.h"
 #include <vector>
+#include "enet/enet.h"
 
 using namespace Display;
 using namespace Render;
@@ -52,7 +53,7 @@ namespace Game
     {
         App::Open();
         this->window = new Display::Window;
-        this->window->SetSize(2500, 2000);
+        this->window->SetSize(2500/2, 2000/2);
 
         if (this->window->Open())
         {
@@ -191,9 +192,56 @@ namespace Game
         std::clock_t c_start = std::clock();
         double dt = 0.01667f;
 
+        //ENet
+        if (enet_initialize() != 0) {
+            fprintf(stderr, "An error Occured while initializing ENet!\n");
+        }
+        atexit(enet_deinitialize);
+
+        ENetAddress address;
+        ENetEvent event;
+        ENetHost* server;
+
+        address.host = ENET_HOST_ANY;
+        address.port = 7777;
+        
+        int playerLimit = 32;
+        server = enet_host_create(&address, playerLimit, 1, 0, 0);
+
+        if (server == NULL) {
+            fprintf(stderr, "An error occurred while trying to create the server! \n");
+        }
+
         // game loop
         while (this->window->IsOpen())
         {
+            /// <Event>
+            while (enet_host_service(server, &event, 1000) > 0)
+            {
+                switch (event.type)
+                {
+                    case ENET_EVENT_TYPE_CONNECT:
+                        printf("A new client connected from %x:%u.\n",
+                            event.peer->address.host,
+                            event.peer->address.port);
+                        break;
+                    case ENET_EVENT_TYPE_RECEIVE:
+                        printf("A packet of length %u containing %s was received from %x:%u on channel %u.\n",
+                            event.packet->dataLength,
+                            event.packet->data,
+                            event.peer->address.host,
+                            event.peer->address.port,
+                            event.channelID);
+                        break;
+                    case ENET_EVENT_TYPE_DISCONNECT:
+                        printf("%x:%u disconnected.\n",
+                            event.peer->address.host,
+                            event.peer->address.port);
+                        break;
+                }
+            }
+            /// </Event>
+            
             auto timeStart = std::chrono::steady_clock::now();
             glClear(GL_DEPTH_BUFFER_BIT);
             glEnable(GL_DEPTH_TEST);
@@ -201,24 +249,14 @@ namespace Game
             glCullFace(GL_BACK);
 
             this->window->Update();
-
+            
             if (kbd->pressed[Input::Key::Code::End])
             {
                 ShaderResource::ReloadShaders();
             }
 
-            //Shoot laser
-            uint64_t start_time = std::chrono::duration_cast<std::chrono::milliseconds>(std::chrono::system_clock::now().time_since_epoch()).count();
-            if (kbd->pressed[Input::Key::Code::Space])
-            {
-                Lasers.push_back(new Laser(ship.transform, start_time));
-            }
-
             ship.Update(dt);
             ship.CheckCollisions();
-
-            // Draw some debug text
-            Debug::DrawDebugText("Center", glm::vec3(0), { 1,0,0,1 });
 
             // Store all drawcalls in the render device
             for (auto const& asteroid : asteroids)
@@ -232,8 +270,8 @@ namespace Game
                 laser->Update(dt);
                 if (laser->marked_for_deletion)
                     delete laser;
-                else
-                    RenderDevice::Draw(laserModel, laser->transform);
+                /*else
+                    RenderDevice::Draw(laserModel, laser->transform);*/
             }
             Lasers.erase(std::remove_if(Lasers.begin(), Lasers.end(), [](Laser* laser) { return laser->marked_for_deletion; }), Lasers.end());
 
@@ -248,9 +286,13 @@ namespace Game
 
             auto timeEnd = std::chrono::steady_clock::now();
             dt = std::min(0.04, std::chrono::duration<double>(timeEnd - timeStart).count());
+            
 
-            if (kbd->pressed[Input::Key::Code::Escape])
+            if (kbd->pressed[Input::Key::Code::Escape]) {
+                enet_host_destroy(server);
                 this->Exit();
+            }
+                
         }
     }
 
