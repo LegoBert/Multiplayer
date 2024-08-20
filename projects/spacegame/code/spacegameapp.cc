@@ -338,20 +338,27 @@ namespace Game
     {
         if (this->window->IsOpen())
         {
-            ImGui::Begin("Debug");
-            Core::CVar* r_draw_light_spheres = Core::CVarGet("r_draw_light_spheres");
-            int drawLightSpheres = Core::CVarReadInt(r_draw_light_spheres);
-            if (ImGui::Checkbox("Draw Light Spheres", (bool*)&drawLightSpheres))
-                Core::CVarWriteInt(r_draw_light_spheres, drawLightSpheres);
+            ImVec2 windowSize(200, 105);
+            ImGui::SetNextWindowSize(windowSize);
+            ImGui::Begin("Server Connection");
 
-            Core::CVar* r_draw_light_sphere_id = Core::CVarGet("r_draw_light_sphere_id");
-            int lightSphereId = Core::CVarReadInt(r_draw_light_sphere_id);
-            if (ImGui::InputInt("LightSphereId", (int*)&lightSphereId))
-                Core::CVarWriteInt(r_draw_light_sphere_id, lightSphereId);
+            static char ip[16] = "";
+            static char portStr[4] = "";
+
+            ImGui::InputText("IP-address", ip, sizeof(ip));
+            ImGui::InputText("Port", portStr, sizeof(portStr));
+
+            if (ImGui::Button("Connect"))
+            {
+                printf("Connecting to %s...\n", ip);
+            }
+            ImGui::SameLine();
+            if (ImGui::Button("Disconnect"))
+            {
+                printf("Disconnecting from %s...\n", ip);
+            }
 
             ImGui::End();
-
-            Debug::DispatchDebugTextDrawing();
         }
     }
 
