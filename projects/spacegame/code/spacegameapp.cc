@@ -21,7 +21,6 @@
 #include <chrono>
 #include "spaceship.h"
 #include <vector>
-#include "enet/enet.h"
 
 using namespace Display;
 using namespace Render;
@@ -189,47 +188,41 @@ namespace Game
         std::clock_t c_start = std::clock();
         double dt = 0.01667f;
 
-        //Connect to Client
+        //ENet
         if (enet_initialize() != 0)
         {
             fprintf(stderr, "An error Occured while initializing ENet!\n");
-            //return EXIT_FAILURE;
         }
 
         atexit(enet_deinitialize);
 
-        ENetHost* client;
         client = enet_host_create(NULL, 1, 1, 0, 0);
 
         if (client == NULL)
         {
             fprintf(stderr, "An error occurred while trying to create ENet client!\n");
-            //return EXIT_FAILURE;
-        }
-        ENetAddress address;
-        ENetEvent event;
-        ENetPeer* peer;
-
-        enet_address_set_host(&address, "192.168.1.103");
-        address.port = 7777; //same here
-
-        peer = enet_host_connect(client, &address, 1, 0);
-        if (peer == NULL)
-        {
-            fprintf(stderr, "No available peers for initiating an ENEt connection! \n");
-            //return EXIT_FAILURE;
         }
 
-        //Check if server has contacted us
-        if (enet_host_service(client, &event, 5000) > 0 && event.type == ENET_EVENT_TYPE_CONNECT)
-        {
-            puts("Connection successful");
-        }
-        else
-        {
-            enet_peer_reset(peer);
-            puts("Connection failed.");
-        }
+        //enet_address_set_host(&address, "192.168.1.103");
+        //address.port = 7777; //same here
+
+        //peer = enet_host_connect(client, &address, 1, 0);
+        //if (peer == NULL)
+        //{
+        //    fprintf(stderr, "No available peers for initiating an ENEt connection! \n");
+        //    //return EXIT_FAILURE;
+        //}
+
+        ////Check if server has contacted us
+        //if (enet_host_service(client, &event, 5000) > 0 && event.type == ENET_EVENT_TYPE_CONNECT)
+        //{
+        //    puts("Connection successful");
+        //}
+        //else
+        //{
+        //    enet_peer_reset(peer);
+        //    puts("Connection failed.");
+        //}
 
         // game loop
         while (this->window->IsOpen())
@@ -343,19 +336,50 @@ namespace Game
             ImGui::Begin("Server Connection");
 
             static char ip[16] = "";
-            static char portStr[4] = "";
+            static int port;
 
             ImGui::InputText("IP-address", ip, sizeof(ip));
-            ImGui::InputText("Port", portStr, sizeof(portStr));
+            ImGui::InputInt("Port", &port, 1);
 
             if (ImGui::Button("Connect"))
             {
-                printf("Connecting to %s...\n", ip);
+                printf("Connecting to %s\n", ip);
+                enet_address_set_host(&address, ip);
+                address.port = port;
+
+                peer = enet_host_connect(client, &address, 1, 0);
+                if (peer == NULL)
+                {
+                    fprintf(stderr, "No available peers for initiating an ENEt connection! \n");
+                }
+
+                //Check if server has contacted us
+                if (enet_host_service(client, &event, 5000) > 0 && event.type == ENET_EVENT_TYPE_CONNECT)
+                {
+                    puts("Connection successful");
+                }
+                else
+                {
+                    enet_peer_reset(peer);
+                    puts("Connection failed.");
+                }
             }
             ImGui::SameLine();
             if (ImGui::Button("Disconnect"))
             {
-                printf("Disconnecting from %s...\n", ip);
+                enet_peer_disconnect(peer, 0);
+                while (enet_host_service(client, &event, 3000) > 0)
+                {
+                    switch (event.type)
+                    {
+                    case ENET_EVENT_TYPE_RECEIVE:
+                        enet_packet_destroy(event.packet);
+                        break;
+                    case ENET_EVENT_TYPE_DISCONNECT:
+                        puts("Disconnection succeeded.");
+                        break;
+                    }
+                }
             }
 
             ImGui::End();

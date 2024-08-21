@@ -8,6 +8,7 @@
 //------------------------------------------------------------------------------
 #include "core/app.h"
 #include "render/window.h"
+#include "enet/enet.h"
 
 namespace Game
 {
@@ -31,5 +32,9 @@ private:
 	void RenderUI();
 
 	Display::Window* window;
+	ENetHost* client;
+	ENetAddress address;
+	ENetEvent event;
+	ENetPeer* peer;
 };
 } // namespace Game
