@@ -32,9 +32,9 @@ private:
 	void RenderUI();
 
 	Display::Window* window;
-	ENetHost* client;
+	ENetHost* client = nullptr;
 	ENetAddress address;
 	ENetEvent event;
-	ENetPeer* peer;
+	ENetPeer* peer = nullptr;
 };
 } // namespace Game

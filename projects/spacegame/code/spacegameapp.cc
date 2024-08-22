@@ -51,7 +51,7 @@ namespace Game
 
         App::Open();
         this->window = new Display::Window;
-        this->window->SetSize(2500, 2000);
+        this->window->SetSize(2500/2, 2000/2);
 
         if (this->window->Open())
         {
@@ -188,7 +188,7 @@ namespace Game
         std::clock_t c_start = std::clock();
         double dt = 0.01667f;
 
-        //ENet
+        //ENet setup
         if (enet_initialize() != 0)
         {
             fprintf(stderr, "An error Occured while initializing ENet!\n");
@@ -202,27 +202,6 @@ namespace Game
         {
             fprintf(stderr, "An error occurred while trying to create ENet client!\n");
         }
-
-        //enet_address_set_host(&address, "192.168.1.103");
-        //address.port = 7777; //same here
-
-        //peer = enet_host_connect(client, &address, 1, 0);
-        //if (peer == NULL)
-        //{
-        //    fprintf(stderr, "No available peers for initiating an ENEt connection! \n");
-        //    //return EXIT_FAILURE;
-        //}
-
-        ////Check if server has contacted us
-        //if (enet_host_service(client, &event, 5000) > 0 && event.type == ENET_EVENT_TYPE_CONNECT)
-        //{
-        //    puts("Connection successful");
-        //}
-        //else
-        //{
-        //    enet_peer_reset(peer);
-        //    puts("Connection failed.");
-        //}
 
         // game loop
         while (this->window->IsOpen())
@@ -303,19 +282,22 @@ namespace Game
         }
 
         //Disconnect
-        enet_peer_disconnect(peer, 0);
-        while (enet_host_service(client, &event, 3000) > 0)
-        {
-            switch (event.type)
+        if (peer != nullptr && peer->state == ENET_PEER_STATE_CONNECTED) {
+            enet_peer_disconnect(peer, 0);
+            while (enet_host_service(client, &event, 3000) > 0)
             {
-            case ENET_EVENT_TYPE_RECEIVE:
-                enet_packet_destroy(event.packet);
-                break;
-            case ENET_EVENT_TYPE_DISCONNECT:
-                puts("Disconnection succeeded.");
-                break;
+                switch (event.type)
+                {
+                case ENET_EVENT_TYPE_RECEIVE:
+                    enet_packet_destroy(event.packet);
+                    break;
+                case ENET_EVENT_TYPE_DISCONNECT:
+                    puts("Disconnection succeeded.");
+                    break;
+                }
             }
         }
+        
     }
 
     //------------------------------------------------------------------------------
@@ -343,29 +325,37 @@ namespace Game
 
             if (ImGui::Button("Connect"))
             {
-                printf("Connecting to %s\n", ip);
-                enet_address_set_host(&address, ip);
-                address.port = port;
-
-                peer = enet_host_connect(client, &address, 1, 0);
-                if (peer == NULL)
+                // Check if the peer is already connected
+                if (peer && peer->state == ENET_PEER_STATE_CONNECTED)
                 {
-                    fprintf(stderr, "No available peers for initiating an ENEt connection! \n");
-                }
-
-                //Check if server has contacted us
-                if (enet_host_service(client, &event, 5000) > 0 && event.type == ENET_EVENT_TYPE_CONNECT)
-                {
-                    puts("Connection successful");
+                    puts("Already connected to the server.");
                 }
                 else
                 {
-                    enet_peer_reset(peer);
-                    puts("Connection failed.");
+                    printf("Connecting to %s\n", ip);
+                    enet_address_set_host(&address, ip);
+                    address.port = port;
+
+                    peer = enet_host_connect(client, &address, 1, 0);
+                    if (peer == NULL)
+                    {
+                        fprintf(stderr, "No available peers for initiating an ENEt connection! \n");
+                    }
+
+                    //Check if server has contacted us
+                    if (enet_host_service(client, &event, 5000) > 0 && event.type == ENET_EVENT_TYPE_CONNECT)
+                    {
+                        puts("Connection successful");
+                    }
+                    else
+                    {
+                        enet_peer_reset(peer);
+                        puts("Connection failed.");
+                    }
                 }
             }
             ImGui::SameLine();
-            if (ImGui::Button("Disconnect"))
+            if (ImGui::Button("Disconnect") && peer != nullptr && peer->state == ENET_PEER_STATE_CONNECTED)
             {
                 enet_peer_disconnect(peer, 0);
                 while (enet_host_service(client, &event, 3000) > 0)
