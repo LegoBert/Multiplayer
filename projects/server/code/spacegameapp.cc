@@ -323,7 +323,7 @@ namespace Game
             int lightSphereId = Core::CVarReadInt(r_draw_light_sphere_id);
             if (ImGui::InputInt("LightSphereId", (int*)&lightSphereId))
                 Core::CVarWriteInt(r_draw_light_sphere_id, lightSphereId);
-
+            
             ImGui::End();
 
             Debug::DispatchDebugTextDrawing();

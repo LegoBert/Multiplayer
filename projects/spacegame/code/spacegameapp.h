@@ -9,6 +9,7 @@
 #include "core/app.h"
 #include "render/window.h"
 #include "enet/enet.h"
+#include "render/input/inputserver.h"
 
 namespace Game
 {
@@ -30,6 +31,7 @@ private:
 
 	/// show some ui things
 	void RenderUI();
+	void SendInputToServer(Input::Keyboard* kbd, uint64_t currentTime);
 
 	Display::Window* window;
 	ENetHost* client = nullptr;

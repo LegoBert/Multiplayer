@@ -21,9 +21,12 @@
 #include <chrono>
 #include "spaceship.h"
 #include <vector>
+#include <proto.h>
 
 using namespace Display;
 using namespace Render;
+using namespace std;
+
 
 namespace Game
 {
@@ -236,6 +239,11 @@ namespace Game
                 ShaderResource::ReloadShaders();
             }
 
+            if (peer && peer->state == ENET_PEER_STATE_CONNECTED)
+            {
+                SendInputToServer(kbd, duration_cast<chrono::milliseconds>(chrono::system_clock::now().time_since_epoch()).count());
+            }
+            
             //Shoot laser
             uint64_t start_time = std::chrono::duration_cast<std::chrono::milliseconds>(std::chrono::system_clock::now().time_since_epoch()).count();
             if (kbd->pressed[Input::Key::Code::Space])
@@ -376,4 +384,44 @@ namespace Game
         }
     }
 
+    void SpaceGameApp::SendInputToServer(Input::Keyboard* kbd, uint64_t currentTime) {
+        uint16_t bitmap = 0;
+        printf("sending");
+        // Iterate over the keys to build the bitmap of pressed keys
+        if (kbd->held[Input::Key::W]){
+            bitmap |= (1 << 0);
+        }
+        if (kbd->held[Input::Key::A]) {
+            bitmap |= (1 << 1);
+        }
+        if (kbd->held[Input::Key::D]) {
+            bitmap |= (1 << 2);
+        }
+        if (kbd->held[Input::Key::Up]) {
+            bitmap |= (1 << 3);
+        }
+        if (kbd->held[Input::Key::Down]) {
+            bitmap |= (1 << 4);
+        }
+        if (kbd->held[Input::Key::Left]) {
+            bitmap |= (1 << 5);
+        }
+        if (kbd->held[Input::Key::Right]) {
+            bitmap |= (1 << 6);
+        }
+        if (kbd->held[Input::Key::Space]) {
+            bitmap |= (1 << 7);
+        }
+        if (kbd->held[Input::Key::Shift]) {
+            bitmap |= (1 << 8);
+        }
+
+        flatbuffers::FlatBufferBuilder builder;
+        auto inputPacket = Protocol::CreateInputC2S(builder, currentTime, bitmap);
+        auto packetWrapper = Protocol::CreatePacketWrapper(builder, Protocol::PacketType_InputC2S, inputPacket.Union());
+
+        builder.Finish(packetWrapper);
+        ENetPacket* packet = enet_packet_create(builder.GetBufferPointer(), builder.GetSize(), ENET_PACKET_FLAG_UNRELIABLE_FRAGMENT);
+        enet_peer_send(peer, 0, packet);
+    }
 } // namespace Game
