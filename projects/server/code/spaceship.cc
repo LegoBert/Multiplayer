@@ -43,17 +43,16 @@ namespace Game
         ParticleSystem::Instance()->AddEmitter(this->particleEmitterRight);
     }
 
-    void
-        SpaceShip::Update(float dt)
-    {
-        Mouse* mouse = Input::GetDefaultMouse();
-        Keyboard* kbd = Input::GetDefaultKeyboard();
+    void SpaceShip::Update(float dt) {
+        /*Mouse* mouse = Input::GetDefaultMouse();
+        Keyboard* kbd = Input::GetDefaultKeyboard();*/
 
         Camera* cam = CameraManager::GetCamera(CAMERA_MAIN);
-
-        if (kbd->held[Key::W])
+        printf("Received InputC2S packet:  bitmap = %u\n", bitmap);
+        if (bitmap & (1 << 0))  // 'W' is bit 0
         {
-            if (kbd->held[Key::Shift])
+            printf("W");
+            if (bitmap & (1 << 8))  // 'Shift' is bit 8
                 this->currentSpeed = mix(this->currentSpeed, this->boostSpeed, std::min(1.0f, dt * 30.0f));
             else
                 this->currentSpeed = mix(this->currentSpeed, this->normalSpeed, std::min(1.0f, dt * 90.0f));
@@ -62,14 +61,16 @@ namespace Game
         {
             this->currentSpeed = 0;
         }
+
         vec3 desiredVelocity = vec3(0, 0, this->currentSpeed);
         desiredVelocity = this->transform * vec4(desiredVelocity, 0.0f);
 
         this->linearVelocity = mix(this->linearVelocity, desiredVelocity, dt * accelerationFactor);
 
-        float rotX = kbd->held[Key::Left] ? 1.0f : kbd->held[Key::Right] ? -1.0f : 0.0f;
-        float rotY = kbd->held[Key::Up] ? -1.0f : kbd->held[Key::Down] ? 1.0f : 0.0f;
-        float rotZ = kbd->held[Key::A] ? -1.0f : kbd->held[Key::D] ? 1.0f : 0.0f;
+        // Rotation calculations using bitmap
+        float rotX = (bitmap & (1 << 5)) ? 1.0f : (bitmap & (1 << 6)) ? -1.0f : 0.0f;  // Left and Right
+        float rotY = (bitmap & (1 << 3)) ? -1.0f : (bitmap & (1 << 4)) ? 1.0f : 0.0f;   // Up and Down
+        float rotZ = (bitmap & (1 << 1)) ? -1.0f : (bitmap & (1 << 2)) ? 1.0f : 0.0f;   // A and D
 
         this->position += this->linearVelocity * dt * 10.0f;
 
@@ -85,7 +86,7 @@ namespace Game
         this->transform = T * (mat4)quat(vec3(0, 0, rotationZ));
         this->rotationZ = mix(this->rotationZ, 0.0f, dt * cameraSmoothFactor);
 
-        // update camera view transform
+        // Update camera view transform
         vec3 desiredCamPos = this->position + vec3(this->transform * vec4(0, camOffsetY, -4.0f, 0));
         this->camPos = mix(this->camPos, desiredCamPos, dt * cameraSmoothFactor);
         cam->view = lookAt(this->camPos, this->camPos + vec3(this->transform[2]), vec3(this->transform[1]));
@@ -130,33 +131,22 @@ namespace Game
         return hit;
     }
 
-    void
-        SpaceShip::LoseALife()
+    void SpaceShip::LoseALife()
     {
-        lives--;
-        if (lives <= 0)
-        {
-            //Game Over
-            //Not yet defined
-        }
-        else
-        {
-            //Reset Velocity
-            currentSpeed = 0.0f;
-            linearVelocity = glm::vec3(0);
+        //Reset Velocity
+        currentSpeed = 0.0f;
+        linearVelocity = glm::vec3(0);
 
-            //Spawn in a new position
-            position = SpawnInRandomPosition(50);
+        //Spawn in a new position
+        position = SpawnInRandomPosition(50);
 
-            //Reset orientation to look at the center of the map
-            glm::vec3 directionToCenter = glm::normalize(glm::vec3(0.0f, 0.0f, 0.0f) - position);
-            glm::quat newOrientation = glm::quatLookAt(-directionToCenter, glm::vec3(0.0f, -1.0f, 0.0f));
-            orientation = newOrientation;
-        }
+        //Reset orientation to look at the center of the map
+        glm::vec3 directionToCenter = glm::normalize(glm::vec3(0.0f, 0.0f, 0.0f) - position);
+        glm::quat newOrientation = glm::quatLookAt(-directionToCenter, glm::vec3(0.0f, -1.0f, 0.0f));
+        orientation = newOrientation;
     }
 
-    glm::vec3
-        SpaceShip::SpawnInRandomPosition(float radius) {
+    glm::vec3 SpaceShip::SpawnInRandomPosition(float radius) {
         std::random_device rd;
         std::mt19937 gen(rd());
         std::uniform_real_distribution<float> dist(0.0f, 1.0f);

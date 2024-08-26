@@ -22,6 +22,7 @@
 #include "spaceship.h"
 #include <vector>
 #include "enet/enet.h"
+#include <proto.h>
 
 using namespace Display;
 using namespace Render;
@@ -109,7 +110,7 @@ namespace Game
         std::vector<std::tuple<ModelId, Physics::ColliderId, glm::mat4>> asteroids;
 
         // Setup asteroids near
-        for (int i = 0; i < 100; i++)
+        /*for (int i = 0; i < 100; i++)
         {
             std::tuple<ModelId, Physics::ColliderId, glm::mat4> asteroid;
             size_t resourceIndex = (size_t)(Core::FastRandom() % 6);
@@ -126,10 +127,10 @@ namespace Game
             std::get<1>(asteroid) = Physics::CreateCollider(colliderMeshes[resourceIndex], transform);
             std::get<2>(asteroid) = transform;
             asteroids.push_back(asteroid);
-        }
+        }*/
 
         // Setup asteroids far
-        for (int i = 0; i < 50; i++)
+        /*for (int i = 0; i < 50; i++)
         {
             std::tuple<ModelId, Physics::ColliderId, glm::mat4> asteroid;
             size_t resourceIndex = (size_t)(Core::FastRandom() % 6);
@@ -146,10 +147,10 @@ namespace Game
             std::get<1>(asteroid) = Physics::CreateCollider(colliderMeshes[resourceIndex], transform);
             std::get<2>(asteroid) = transform;
             asteroids.push_back(asteroid);
-        }
+        }*/
 
         // Setup skybox
-        std::vector<const char*> skybox
+        /*std::vector<const char*> skybox
         {
             "assets/space/bg.png",
             "assets/space/bg.png",
@@ -159,14 +160,14 @@ namespace Game
             "assets/space/bg.png"
         };
         TextureResourceId skyboxId = TextureResource::LoadCubemap("skybox", skybox, true);
-        RenderDevice::SetSkybox(skyboxId);
+        RenderDevice::SetSkybox(skyboxId);*/
 
         Input::Keyboard* kbd = Input::GetDefaultKeyboard();
 
         const int numLights = 40;
         Render::PointLightId lights[numLights];
         // Setup lights
-        for (int i = 0; i < numLights; i++)
+        /*for (int i = 0; i < numLights; i++)
         {
             glm::vec3 translation = glm::vec3(
                 Core::RandomFloatNTP() * 20.0f,
@@ -179,7 +180,7 @@ namespace Game
                 Core::RandomFloat()
             );
             lights[i] = Render::LightServer::CreatePointLight(translation, color, Core::RandomFloat() * 4.0f, 1.0f + (15 + Core::RandomFloat() * 10.0f));
-        }
+        }*/
 
         SpaceShip ship;
         ship.model = LoadModel("assets/space/spaceship.glb");
@@ -215,9 +216,10 @@ namespace Game
         // game loop
         while (this->window->IsOpen())
         {
-            /// <Event>
-            while (enet_host_service(server, &event, 1000) > 0)
+            //<Event>
+            while (enet_host_service(server, &event, 0) > 0)
             {
+                //ship.Update(dt);
                 switch (event.type)
                 {
                     case ENET_EVENT_TYPE_CONNECT:
@@ -226,12 +228,13 @@ namespace Game
                             event.peer->address.port);
                         break;
                     case ENET_EVENT_TYPE_RECEIVE:
-                        printf("A packet of length %u containing %s was received from %x:%u on channel %u.\n",
+                        /*printf("A packet of length %u containing %s was received from %x:%u on channel %u.\n",
                             event.packet->dataLength,
                             event.packet->data,
                             event.peer->address.host,
                             event.peer->address.port,
-                            event.channelID);
+                            event.channelID);*/
+                        ProcessReceivedPacket(event.packet->data, event.packet->dataLength, &ship);
                         break;
                     case ENET_EVENT_TYPE_DISCONNECT:
                         printf("%x:%u disconnected.\n",
@@ -240,7 +243,7 @@ namespace Game
                         break;
                 }
             }
-            /// </Event>
+            //</Event>
             
             auto timeStart = std::chrono::steady_clock::now();
             glClear(GL_DEPTH_BUFFER_BIT);
@@ -250,36 +253,36 @@ namespace Game
 
             this->window->Update();
             
-            if (kbd->pressed[Input::Key::Code::End])
+            /*if (kbd->pressed[Input::Key::Code::End])
             {
                 ShaderResource::ReloadShaders();
-            }
+            }*/
 
             ship.Update(dt);
             ship.CheckCollisions();
 
             // Store all drawcalls in the render device
-            for (auto const& asteroid : asteroids)
+            /*for (auto const& asteroid : asteroids)
             {
                 RenderDevice::Draw(std::get<0>(asteroid), std::get<2>(asteroid));
-            }
+            }*/
 
             // Update and draw all lasers
-            for (Laser* laser : Lasers)
-            {
-                laser->Update(dt);
-                if (laser->marked_for_deletion)
-                    delete laser;
-                /*else
-                    RenderDevice::Draw(laserModel, laser->transform);*/
-            }
-            Lasers.erase(std::remove_if(Lasers.begin(), Lasers.end(), [](Laser* laser) { return laser->marked_for_deletion; }), Lasers.end());
+            //for (Laser* laser : Lasers)
+            //{
+            //    laser->Update(dt);
+            //    if (laser->marked_for_deletion)
+            //        delete laser;
+            //    /*else
+            //        RenderDevice::Draw(laserModel, laser->transform);*/
+            //}
+            //Lasers.erase(std::remove_if(Lasers.begin(), Lasers.end(), [](Laser* laser) { return laser->marked_for_deletion; }), Lasers.end());
 
-            RenderDevice::Draw(ship.model, ship.transform);
             Physics::SetTransform(ship.collider, ship.transform);
+            //RenderDevice::Draw(ship.model, ship.transform);
 
             // Execute the entire rendering pipeline
-            RenderDevice::Render(this->window, dt);
+            //RenderDevice::Render(this->window, dt);
 
             // transfer new frame to window
             this->window->SwapBuffers();
@@ -297,19 +300,15 @@ namespace Game
     }
 
     //------------------------------------------------------------------------------
-    /**
-    */
-    void
-        SpaceGameApp::Exit()
+
+    void SpaceGameApp::Exit()
     {
         this->window->Close();
     }
 
     //------------------------------------------------------------------------------
-    /**
-    */
-    void
-        SpaceGameApp::RenderUI()
+
+    void SpaceGameApp::RenderUI()
     {
         if (this->window->IsOpen())
         {
@@ -327,6 +326,43 @@ namespace Game
             ImGui::End();
 
             Debug::DispatchDebugTextDrawing();
+        }
+    }
+
+    void SpaceGameApp::ProcessReceivedPacket(const void* data, size_t dataLength, SpaceShip* ship)
+    {
+        // Ensure the data length is valid
+        if (dataLength < sizeof(uint16_t)) {
+            printf("Received packet is too short.\n");
+            return;
+        }
+
+        // Create a FlatBuffers buffer from the received data
+        auto packetWrapper = Protocol::GetPacketWrapper(data);
+
+        // Check the type of packet received
+        switch (packetWrapper->packet_type())
+        {
+            case Protocol::PacketType_InputC2S:
+            {
+                // Deserialize InputC2S packet
+                const auto inputPacket = packetWrapper->packet_as_InputC2S();
+                if (inputPacket)
+                {
+                    unsigned long long time = inputPacket->time();
+                    unsigned short bitmap = inputPacket->bitmap();
+
+                    // Process the input data (time and bitmap)
+                    //printf("Received InputC2S packet: time = %llu, bitmap = %u\n", time, bitmap);
+
+                    // Handle input changes based on the bitmap
+                    ship->bitmap = inputPacket->bitmap();
+                }
+                break;
+            }
+            default:
+                printf("Received unknown packet type.\n");
+                break;
         }
     }
 

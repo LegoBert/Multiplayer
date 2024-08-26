@@ -89,7 +89,7 @@ namespace Game
         float rotYSmooth = 0;
         float rotZSmooth = 0;
 
-        int16 lives = 3;
+        uint16_t bitmap = 0;
 
         Render::ModelId model;
         Physics::ColliderId collider;

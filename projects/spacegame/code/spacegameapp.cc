@@ -386,7 +386,6 @@ namespace Game
 
     void SpaceGameApp::SendInputToServer(Input::Keyboard* kbd, uint64_t currentTime) {
         uint16_t bitmap = 0;
-        printf("sending");
         // Iterate over the keys to build the bitmap of pressed keys
         if (kbd->held[Input::Key::W]){
             bitmap |= (1 << 0);

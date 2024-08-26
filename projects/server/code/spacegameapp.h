@@ -8,6 +8,7 @@
 //------------------------------------------------------------------------------
 #include "core/app.h"
 #include "render/window.h"
+#include "spaceship.h"
 
 namespace Game
 {
@@ -26,9 +27,9 @@ public:
 	/// exit app
 	void Exit();
 private:
-
 	/// show some ui things
 	void RenderUI();
+	void ProcessReceivedPacket(const void* data, size_t dataLength, SpaceShip* ship);
 
 	Display::Window* window;
 };
