@@ -26,31 +26,22 @@
 
 using namespace Display;
 using namespace Render;
+using namespace std;
 
 namespace Game
 {
 
     //------------------------------------------------------------------------------
-    /**
-    */
-    SpaceGameApp::SpaceGameApp()
-    {
-        // empty
-    }
+
+    SpaceGameApp::SpaceGameApp() { }
 
     //------------------------------------------------------------------------------
-    /**
-    */
-    SpaceGameApp::~SpaceGameApp()
-    {
-        // empty
-    }
+
+    SpaceGameApp::~SpaceGameApp() { }
 
     //------------------------------------------------------------------------------
-    /**
-    */
-    bool
-        SpaceGameApp::Open()
+
+    bool SpaceGameApp::Open()
     {
         App::Open();
         this->window = new Display::Window;
@@ -75,10 +66,8 @@ namespace Game
     }
 
     //------------------------------------------------------------------------------
-    /**
-    */
-    void
-        SpaceGameApp::Run()
+    
+    void SpaceGameApp::Run()
     {
         int w;
         int h;
@@ -182,10 +171,10 @@ namespace Game
             lights[i] = Render::LightServer::CreatePointLight(translation, color, Core::RandomFloat() * 4.0f, 1.0f + (15 + Core::RandomFloat() * 10.0f));
         }*/
 
-        SpaceShip ship;
+        /*SpaceShip ship;
         ship.model = LoadModel("assets/space/spaceship.glb");
         Physics::ColliderMeshId ShipCollider = Physics::LoadColliderMesh("assets/space/spaceship_physics.glb");
-        ship.collider = Physics::CreateCollider(ShipCollider, ship.transform);
+        ship.collider = Physics::CreateCollider(ShipCollider, ship.transform);*/
 
 
         ModelId laserModel = LoadModel("assets/space/laser.glb");
@@ -219,13 +208,13 @@ namespace Game
             //<Event>
             while (enet_host_service(server, &event, 0) > 0)
             {
-                //ship.Update(dt);
                 switch (event.type)
                 {
                     case ENET_EVENT_TYPE_CONNECT:
                         printf("A new client connected from %x:%u.\n",
                             event.peer->address.host,
                             event.peer->address.port);
+                        SpawnSpaceShip(event.peer);
                         break;
                     case ENET_EVENT_TYPE_RECEIVE:
                         /*printf("A packet of length %u containing %s was received from %x:%u on channel %u.\n",
@@ -234,12 +223,13 @@ namespace Game
                             event.peer->address.host,
                             event.peer->address.port,
                             event.channelID);*/
-                        ProcessReceivedPacket(event.packet->data, event.packet->dataLength, &ship);
+                        ProcessReceivedPacket(event.packet->data, event.packet->dataLength);
                         break;
                     case ENET_EVENT_TYPE_DISCONNECT:
                         printf("%x:%u disconnected.\n",
                             event.peer->address.host,
                             event.peer->address.port);
+                        // Despawn ships here!!!
                         break;
                 }
             }
@@ -258,8 +248,8 @@ namespace Game
                 ShaderResource::ReloadShaders();
             }*/
 
-            ship.Update(dt);
-            ship.CheckCollisions();
+            //ship.Update(dt);
+            //ship.CheckCollisions();
 
             // Store all drawcalls in the render device
             /*for (auto const& asteroid : asteroids)
@@ -278,7 +268,7 @@ namespace Game
             //}
             //Lasers.erase(std::remove_if(Lasers.begin(), Lasers.end(), [](Laser* laser) { return laser->marked_for_deletion; }), Lasers.end());
 
-            Physics::SetTransform(ship.collider, ship.transform);
+            //Physics::SetTransform(ship.collider, ship.transform);
             //RenderDevice::Draw(ship.model, ship.transform);
 
             // Execute the entire rendering pipeline
@@ -329,7 +319,24 @@ namespace Game
         }
     }
 
-    void SpaceGameApp::ProcessReceivedPacket(const void* data, size_t dataLength, SpaceShip* ship)
+    //------------------------------------------------------------------------------
+
+    void SpaceGameApp::SpawnSpaceShip(ENetPeer* peer) {
+        SpaceShip ship;
+        ship.id = Game::uuid++;
+        ship.peer = peer;
+        Physics::ColliderMeshId ShipCollider = Physics::LoadColliderMesh("assets/space/spaceship_physics.glb");
+        ship.collider = Physics::CreateCollider(ShipCollider, ship.transform);
+        ship.Teleport();
+        SpaceGameApp::players.push_back(ship);
+        SendClientConnectS2C(ship.id, peer);
+        //Send gamestate 2 new player
+        //inform other clients about new ship
+
+    }
+
+    //<ENet functions>
+    void SpaceGameApp::ProcessReceivedPacket(const void* data, size_t dataLength)
     {
         // Ensure the data length is valid
         if (dataLength < sizeof(uint16_t)) {
@@ -349,14 +356,7 @@ namespace Game
                 const auto inputPacket = packetWrapper->packet_as_InputC2S();
                 if (inputPacket)
                 {
-                    unsigned long long time = inputPacket->time();
-                    unsigned short bitmap = inputPacket->bitmap();
-
-                    // Process the input data (time and bitmap)
-                    //printf("Received InputC2S packet: time = %llu, bitmap = %u\n", time, bitmap);
-
-                    // Handle input changes based on the bitmap
-                    ship->bitmap = inputPacket->bitmap();
+                    //ship->bitmap = inputPacket->bitmap();
                 }
                 break;
             }
@@ -365,5 +365,33 @@ namespace Game
                 break;
         }
     }
+
+    void SpaceGameApp::SendClientConnectS2C(uint16_t uuid,ENetPeer* peer) {
+        flatbuffers::FlatBufferBuilder builder;
+        auto idPacket = Protocol::CreateClientConnectS2C(builder, uuid, chrono::duration_cast<chrono::milliseconds>(chrono::system_clock::now().time_since_epoch()).count());
+        auto packetWrapper = Protocol::CreatePacketWrapper(builder, Protocol::PacketType_ClientConnectS2C, idPacket.Union());
+
+        builder.Finish(packetWrapper);
+        ENetPacket* packet = enet_packet_create(builder.GetBufferPointer(), builder.GetSize(), ENET_PACKET_FLAG_UNRELIABLE_FRAGMENT);
+        enet_peer_send(peer, 0, packet);
+    }
+
+    //void SpaceGameApp::SendGameStateS2C(ENetPeer* peer) {
+    //    flatbuffers::FlatBufferBuilder builder;
+    //    Protocol::GameStateS2CT state;
+    //    for (SpaceShip player : SpaceGameApp::players) {
+    //        state.players.push_back(Protocol::Player(player.id, player.position, player.linearVelocity, player., player.));
+    //    }
+    //    for (GLaser laser : SpaceGameApp::lasers) {
+    //        //laser.uuid, laser.start_time, laser.end_time, laser.origin, laser.direction
+    //        state.lasers.push_back(Protocol::Laser());
+    //    }
+    //    auto gameStatePacket = Protocol::CreateGameStateS2C(builder, state);
+    //    auto packetWrapper = Protocol::CreatePacketWrapper(builder, Protocol::PacketType_GameStateS2C, gameStatePacket.Union());
+
+    //    builder.Finish(packetWrapper);
+    //    ENetPacket* packet = enet_packet_create(builder.GetBufferPointer(), builder.GetSize(), ENET_PACKET_FLAG_UNRELIABLE_FRAGMENT);
+    //    enet_peer_send(peer, 0, packet);
+    //}
 
 } // namespace Game

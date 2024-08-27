@@ -124,14 +124,14 @@ namespace Game
             if (payload.hit && payload.collider != this->collider)
             {
                 Debug::DrawDebugText("HIT", payload.hitPoint, glm::vec4(1, 1, 1, 1));
-                LoseALife();
+                Teleport();
                 hit = true;
             }
         }
         return hit;
     }
 
-    void SpaceShip::LoseALife()
+    void SpaceShip::Teleport()
     {
         lives--;
         if (lives <= 0)

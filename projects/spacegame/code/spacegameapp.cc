@@ -33,18 +33,11 @@ namespace Game
 
     //------------------------------------------------------------------------------
     
-    SpaceGameApp::SpaceGameApp()
-    {
-        
-        
-    }
+    SpaceGameApp::SpaceGameApp(){ }
 
     //------------------------------------------------------------------------------
     
-    SpaceGameApp::~SpaceGameApp()
-    {
-    
-    }
+    SpaceGameApp::~SpaceGameApp() { }
 
     //------------------------------------------------------------------------------
     
@@ -214,14 +207,15 @@ namespace Game
             {
                 switch (event.type)
                 {
-                case ENET_EVENT_TYPE_RECEIVE:
-                    printf("A packet of length %u containing %s was received from %x:%u on channel %u.\n",
+                    case ENET_EVENT_TYPE_RECEIVE:
+                        /*printf("A packet of length %u containing %s was received from %x:%u on channel %u.\n",
                         event.packet->dataLength,
                         event.packet->data,
                         event.peer->address.host,
                         event.peer->address.port,
-                        event.channelID);
-                    break;
+                        event.channelID);*/
+                        ProcessReceivedPacket(event.packet->data, event.packet->dataLength);
+                        break;
                 }
             }
             /// </Event>
@@ -423,4 +417,35 @@ namespace Game
         ENetPacket* packet = enet_packet_create(builder.GetBufferPointer(), builder.GetSize(), ENET_PACKET_FLAG_UNRELIABLE_FRAGMENT);
         enet_peer_send(peer, 0, packet);
     }
+
+    void SpaceGameApp::ProcessReceivedPacket(const void* data, size_t dataLength)
+    {
+        // Ensure the data length is valid
+        if (dataLength < sizeof(uint16_t)) {
+            printf("Received packet is too short.\n");
+            return;
+        }
+
+        // Create a FlatBuffers buffer from the received data
+        auto packetWrapper = Protocol::GetPacketWrapper(data);
+
+        // Check the type of packet received
+        switch (packetWrapper->packet_type())
+        {
+            case Protocol::PacketType_ClientConnectS2C:
+            {
+                // Deserialize InputC2S packet
+                const auto packet = packetWrapper->packet_as_ClientConnectS2C();
+                if (packet)
+                {
+                    printf("uuid assigned: %u\n", packet->uuid());
+                }
+                break;
+            }
+            default:
+                printf("Received unknown packet type.\n");
+                break;
+        }
+    }
+
 } // namespace Game

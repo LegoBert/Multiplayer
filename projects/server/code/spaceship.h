@@ -4,6 +4,7 @@
 #include <chrono>
 #include "render/physics.h"
 #include "render/debugrender.h"
+#include "enet/enet.h"
 
 namespace Render
 {
@@ -90,6 +91,8 @@ namespace Game
         float rotZSmooth = 0;
 
         uint16_t bitmap = 0;
+        uint32_t id;
+        ENetPeer* peer = nullptr;
 
         Render::ModelId model;
         Physics::ColliderId collider;
@@ -101,7 +104,7 @@ namespace Game
 
         bool CheckCollisions();
 
-        void LoseALife();
+        void Teleport();
 
         glm::vec3 SpawnInRandomPosition(float radius);
 

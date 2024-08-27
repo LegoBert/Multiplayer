@@ -101,7 +101,7 @@ namespace Game
 
         bool CheckCollisions();
 
-        void LoseALife();
+        void Teleport();
 
         glm::vec3 SpawnInRandomPosition(float radius);
 

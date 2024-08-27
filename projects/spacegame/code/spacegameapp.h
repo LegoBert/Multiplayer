@@ -28,10 +28,9 @@ public:
 	/// exit app
 	void Exit();
 private:
-
-	/// show some ui things
 	void RenderUI();
 	void SendInputToServer(Input::Keyboard* kbd, uint64_t currentTime);
+	void ProcessReceivedPacket(const void* data, size_t dataLength);
 
 	Display::Window* window;
 	ENetHost* client = nullptr;
