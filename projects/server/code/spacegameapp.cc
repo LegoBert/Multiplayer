@@ -214,15 +214,11 @@ namespace Game
                         printf("A new client connected from %x:%u.\n",
                             event.peer->address.host,
                             event.peer->address.port);
-                        SpawnSpaceShip(event.peer);
+                        SpawnSpaceShip(uuid++, event.peer);
+                        SendClientConnectS2C(uuid, event.peer);
+                        //SendGameStateS2C(event.peer);
                         break;
                     case ENET_EVENT_TYPE_RECEIVE:
-                        /*printf("A packet of length %u containing %s was received from %x:%u on channel %u.\n",
-                            event.packet->dataLength,
-                            event.packet->data,
-                            event.peer->address.host,
-                            event.peer->address.port,
-                            event.channelID);*/
                         ProcessReceivedPacket(event.packet->data, event.packet->dataLength);
                         break;
                     case ENET_EVENT_TYPE_DISCONNECT:
@@ -321,18 +317,15 @@ namespace Game
 
     //------------------------------------------------------------------------------
 
-    void SpaceGameApp::SpawnSpaceShip(ENetPeer* peer) {
+    void SpaceGameApp::SpawnSpaceShip(uint32_t uuid, ENetPeer* peer) {
         SpaceShip ship;
-        ship.id = Game::uuid++;
+        ship.id = uuid;
         ship.peer = peer;
         Physics::ColliderMeshId ShipCollider = Physics::LoadColliderMesh("assets/space/spaceship_physics.glb");
         ship.collider = Physics::CreateCollider(ShipCollider, ship.transform);
         ship.Teleport();
         SpaceGameApp::players.push_back(ship);
-        SendClientConnectS2C(ship.id, peer);
-        //Send gamestate 2 new player
-        //inform other clients about new ship
-
+        //SendSpawnPlayerS2C(const Protocol::Player * player, vector<ENetPeer*> peers);
     }
 
     //<ENet functions>
@@ -366,7 +359,7 @@ namespace Game
         }
     }
 
-    void SpaceGameApp::SendClientConnectS2C(uint16_t uuid,ENetPeer* peer) {
+    void SendClientConnectS2C(uint16_t uuid, ENetPeer* peer) {
         flatbuffers::FlatBufferBuilder builder;
         auto idPacket = Protocol::CreateClientConnectS2C(builder, uuid, chrono::duration_cast<chrono::milliseconds>(chrono::system_clock::now().time_since_epoch()).count());
         auto packetWrapper = Protocol::CreatePacketWrapper(builder, Protocol::PacketType_ClientConnectS2C, idPacket.Union());
@@ -376,22 +369,80 @@ namespace Game
         enet_peer_send(peer, 0, packet);
     }
 
-    //void SpaceGameApp::SendGameStateS2C(ENetPeer* peer) {
-    //    flatbuffers::FlatBufferBuilder builder;
-    //    Protocol::GameStateS2CT state;
-    //    for (SpaceShip player : SpaceGameApp::players) {
-    //        state.players.push_back(Protocol::Player(player.id, player.position, player.linearVelocity, player., player.));
-    //    }
-    //    for (GLaser laser : SpaceGameApp::lasers) {
-    //        //laser.uuid, laser.start_time, laser.end_time, laser.origin, laser.direction
-    //        state.lasers.push_back(Protocol::Laser());
-    //    }
-    //    auto gameStatePacket = Protocol::CreateGameStateS2C(builder, state);
-    //    auto packetWrapper = Protocol::CreatePacketWrapper(builder, Protocol::PacketType_GameStateS2C, gameStatePacket.Union());
+    void SendGameStateS2C(const std::vector<Protocol::Player>* players, const std::vector<Protocol::Laser>* lasers, ENetPeer* peer) {
+        flatbuffers::FlatBufferBuilder builder;
+        auto gameStatePacket = Protocol::CreateGameStateS2CDirect(builder, players, lasers);
+        auto packetWrapper = Protocol::CreatePacketWrapper(builder, Protocol::PacketType_GameStateS2C, gameStatePacket.Union());
 
-    //    builder.Finish(packetWrapper);
-    //    ENetPacket* packet = enet_packet_create(builder.GetBufferPointer(), builder.GetSize(), ENET_PACKET_FLAG_UNRELIABLE_FRAGMENT);
-    //    enet_peer_send(peer, 0, packet);
-    //}
+        builder.Finish(packetWrapper);
+        ENetPacket* packet = enet_packet_create(builder.GetBufferPointer(), builder.GetSize(), ENET_PACKET_FLAG_UNRELIABLE_FRAGMENT);
+        enet_peer_send(peer, 0, packet);
+    }
+
+    void SendSpawnPlayerS2C(const Protocol::Player* player, vector<ENetPeer*> peers) {
+        flatbuffers::FlatBufferBuilder builder;
+        auto telPacket = Protocol::CreateSpawnPlayerS2C(builder, player);
+        auto packetWrapper = Protocol::CreatePacketWrapper(builder, Protocol::PacketType_SpawnPlayerS2C, telPacket.Union());
+
+        builder.Finish(packetWrapper);
+        ENetPacket* packet = enet_packet_create(builder.GetBufferPointer(), builder.GetSize(), ENET_PACKET_FLAG_UNRELIABLE_FRAGMENT);
+        for (ENetPeer* peer : peers)
+            enet_peer_send(peer, 0, packet);
+    }
+
+    void SendDespawnPlayerS2C(uint32_t uuid, vector<ENetPeer*> peers) {
+        flatbuffers::FlatBufferBuilder builder;
+        auto telPacket = Protocol::CreateDespawnPlayerS2C(builder, uuid);
+        auto packetWrapper = Protocol::CreatePacketWrapper(builder, Protocol::PacketType_DespawnPlayerS2C, telPacket.Union());
+
+        builder.Finish(packetWrapper);
+        ENetPacket* packet = enet_packet_create(builder.GetBufferPointer(), builder.GetSize(), ENET_PACKET_FLAG_UNRELIABLE_FRAGMENT);
+        for (ENetPeer* peer : peers)
+            enet_peer_send(peer, 0, packet);
+    }
+
+    void SendUpdatePlayerS2C(const Protocol::Player* player, uint64_t time, vector<ENetPeer*> peers) {
+        flatbuffers::FlatBufferBuilder builder;
+        auto telPacket = Protocol::CreateUpdatePlayerS2C(builder, time, player);
+        auto packetWrapper = Protocol::CreatePacketWrapper(builder, Protocol::PacketType_UpdatePlayerS2C, telPacket.Union());
+
+        builder.Finish(packetWrapper);
+        ENetPacket* packet = enet_packet_create(builder.GetBufferPointer(), builder.GetSize(), ENET_PACKET_FLAG_UNRELIABLE_FRAGMENT);
+        for (ENetPeer* peer : peers)
+            enet_peer_send(peer, 0, packet);
+    }
+
+    void SendTeleportPlayerS2C(const Protocol::Player* player, uint64_t time, vector<ENetPeer*> peers) {
+        flatbuffers::FlatBufferBuilder builder;
+        auto telPacket = Protocol::CreateTeleportPlayerS2C(builder, time, player);
+        auto packetWrapper = Protocol::CreatePacketWrapper(builder, Protocol::PacketType_TeleportPlayerS2C, telPacket.Union());
+
+        builder.Finish(packetWrapper);
+        ENetPacket* packet = enet_packet_create(builder.GetBufferPointer(), builder.GetSize(), ENET_PACKET_FLAG_UNRELIABLE_FRAGMENT);
+        for (ENetPeer* peer : peers)
+            enet_peer_send(peer, 0, packet);
+    }
+
+    void SendSpawnLaserS2C(const Protocol::Laser* laser, vector<ENetPeer*> peers) {
+        flatbuffers::FlatBufferBuilder builder;
+        auto telPacket = Protocol::CreateSpawnLaserS2C(builder, laser);
+        auto packetWrapper = Protocol::CreatePacketWrapper(builder, Protocol::PacketType_SpawnLaserS2C, telPacket.Union());
+
+        builder.Finish(packetWrapper);
+        ENetPacket* packet = enet_packet_create(builder.GetBufferPointer(), builder.GetSize(), ENET_PACKET_FLAG_UNRELIABLE_FRAGMENT);
+        for (ENetPeer* peer : peers)
+            enet_peer_send(peer, 0, packet);
+    }
+
+    void SendDespawnLaserS2C(uint32_t uuid, vector<ENetPeer*> peers) {
+        flatbuffers::FlatBufferBuilder builder;
+        auto telPacket = Protocol::CreateDespawnLaserS2C(builder, uuid);
+        auto packetWrapper = Protocol::CreatePacketWrapper(builder, Protocol::PacketType_DespawnLaserS2C, telPacket.Union());
+
+        builder.Finish(packetWrapper);
+        ENetPacket* packet = enet_packet_create(builder.GetBufferPointer(), builder.GetSize(), ENET_PACKET_FLAG_UNRELIABLE_FRAGMENT);
+        for(ENetPeer* peer : peers)
+            enet_peer_send(peer, 0, packet);
+    }
 
 } // namespace Game

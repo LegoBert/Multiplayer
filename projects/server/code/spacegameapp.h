@@ -31,9 +31,7 @@ private:
 	/// show some ui things
 	void RenderUI();
 	void ProcessReceivedPacket(const void* data, size_t dataLength);
-	void SendClientConnectS2C(uint16_t uuid, ENetPeer* peer);
-	void SendGameStateS2C(ENetPeer* peer);
-	void SpawnSpaceShip(ENetPeer* peer);
+	void SpawnSpaceShip(uint32_t uuid, ENetPeer* peer);
 
 
 	Display::Window* window;
