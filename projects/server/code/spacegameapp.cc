@@ -216,7 +216,7 @@ namespace Game
                             event.peer->address.port);
                         SpawnSpaceShip(uuid++, event.peer);
                         SendClientConnectS2C(uuid, event.peer);
-                        //SendGameStateS2C(event.peer);
+                        SendGameStateS2C(SpaceGameApp::spaceShips, SpaceGameApp::lasers, event.peer);
                         break;
                     case ENET_EVENT_TYPE_RECEIVE:
                         ProcessReceivedPacket(event.packet->data, event.packet->dataLength);
@@ -318,14 +318,29 @@ namespace Game
     //------------------------------------------------------------------------------
 
     void SpaceGameApp::SpawnSpaceShip(uint32_t uuid, ENetPeer* peer) {
+        //Create a new SpaceShip instance
         SpaceShip ship;
         ship.id = uuid;
         ship.peer = peer;
         Physics::ColliderMeshId ShipCollider = Physics::LoadColliderMesh("assets/space/spaceship_physics.glb");
         ship.collider = Physics::CreateCollider(ShipCollider, ship.transform);
         ship.Teleport();
-        SpaceGameApp::players.push_back(ship);
-        //SendSpawnPlayerS2C(const Protocol::Player * player, vector<ENetPeer*> peers);
+        SpaceGameApp::spaceShips.push_back(ship);
+
+        // Create a new player object for network synchronization
+        ship.player = Protocol::Player(
+            uuid,                                                                                           // Unique player ID
+            Protocol::Vec3(ship.position[0], ship.position[1], ship.position[2]),                           // Initial position (x, y, z)
+            Protocol::Vec3(0, 0, 0),                                                                        // Initial velocity (x, y, z)
+            Protocol::Vec3(0, 0, 0),                                                                        // Initial acceleration (x, y, z)
+            Protocol::Vec4(ship.orientation.x, ship.orientation.y, ship.orientation.z, ship.orientation.w)  // Initial rotation (quaternion x, y, z, w)
+        );
+
+        // Send a message to all connected peers, informing them of the new player's spawn+
+        SendSpawnPlayerS2C(&ship.player, SpaceGameApp::peers);
+
+        // Add the peer to the list of connected peers in the game
+        SpaceGameApp::peers.push_back(peer);
     }
 
     //<ENet functions>
@@ -359,7 +374,7 @@ namespace Game
         }
     }
 
-    void SendClientConnectS2C(uint16_t uuid, ENetPeer* peer) {
+    void SpaceGameApp::SendClientConnectS2C(uint16_t uuid, ENetPeer* peer) {
         flatbuffers::FlatBufferBuilder builder;
         auto idPacket = Protocol::CreateClientConnectS2C(builder, uuid, chrono::duration_cast<chrono::milliseconds>(chrono::system_clock::now().time_since_epoch()).count());
         auto packetWrapper = Protocol::CreatePacketWrapper(builder, Protocol::PacketType_ClientConnectS2C, idPacket.Union());
@@ -369,9 +384,19 @@ namespace Game
         enet_peer_send(peer, 0, packet);
     }
 
-    void SendGameStateS2C(const std::vector<Protocol::Player>* players, const std::vector<Protocol::Laser>* lasers, ENetPeer* peer) {
+    void SpaceGameApp::SendGameStateS2C(std::vector<SpaceShip>& spaceShips, std::vector<Laser>& lasers, ENetPeer* peer) {
         flatbuffers::FlatBufferBuilder builder;
-        auto gameStatePacket = Protocol::CreateGameStateS2CDirect(builder, players, lasers);
+        std::vector<Protocol::Player> p;
+        for (const auto& spaceShip : spaceShips) {
+            const Protocol::Player player = spaceShip.player;
+            p.push_back(player);
+        }
+        std::vector<Protocol::Laser> l;
+        for (const auto& spaceShip : spaceShips) {
+            const Protocol::Player player = spaceShip.player;
+            p.push_back(player);
+        }
+        auto gameStatePacket = Protocol::CreateGameStateS2CDirect(builder, &p, &l);
         auto packetWrapper = Protocol::CreatePacketWrapper(builder, Protocol::PacketType_GameStateS2C, gameStatePacket.Union());
 
         builder.Finish(packetWrapper);
@@ -379,7 +404,7 @@ namespace Game
         enet_peer_send(peer, 0, packet);
     }
 
-    void SendSpawnPlayerS2C(const Protocol::Player* player, vector<ENetPeer*> peers) {
+    void SpaceGameApp::SendSpawnPlayerS2C(Protocol::Player* player, vector<ENetPeer*> peers) {
         flatbuffers::FlatBufferBuilder builder;
         auto telPacket = Protocol::CreateSpawnPlayerS2C(builder, player);
         auto packetWrapper = Protocol::CreatePacketWrapper(builder, Protocol::PacketType_SpawnPlayerS2C, telPacket.Union());

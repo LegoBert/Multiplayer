@@ -10,6 +10,7 @@
 #include "render/window.h"
 #include "spaceship.h"
 #include "enet/enet.h"
+#include <proto.h>
 
 namespace Game
 {
@@ -33,10 +34,20 @@ private:
 	void ProcessReceivedPacket(const void* data, size_t dataLength);
 	void SpawnSpaceShip(uint32_t uuid, ENetPeer* peer);
 
+	void SendClientConnectS2C(uint16_t uuid, ENetPeer* peer);
+	void SendGameStateS2C(std::vector<SpaceShip>& spaceShips, std::vector<Laser>& lasers, ENetPeer* peer);
+	void SendSpawnPlayerS2C(Protocol::Player* player, std::vector<ENetPeer*> peers);
+
 
 	Display::Window* window;
-	std::vector<SpaceShip> players = {};
+
+	std::vector<ENetPeer*> peers = {};
+
+	std::vector<SpaceShip> spaceShips = {};
 	std::vector<Laser> lasers = {};
+
+	std::vector<Protocol::Player> protoPlayers = {};
+	const std::vector<Protocol::Laser>* protoLasers = {};
 };
 
 static unsigned int uuid = 0;

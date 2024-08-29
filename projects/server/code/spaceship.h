@@ -5,6 +5,7 @@
 #include "render/physics.h"
 #include "render/debugrender.h"
 #include "enet/enet.h"
+#include <proto.h>
 
 namespace Render
 {
@@ -93,6 +94,7 @@ namespace Game
         uint16_t bitmap = 0;
         uint32_t id;
         ENetPeer* peer = nullptr;
+        Protocol::Player player;
 
         Render::ModelId model;
         Physics::ColliderId collider;

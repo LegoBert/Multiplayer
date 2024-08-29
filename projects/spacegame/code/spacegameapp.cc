@@ -442,6 +442,16 @@ namespace Game
                 }
                 break;
             }
+            case Protocol::PacketType_GameStateS2C:
+            {
+                printf("GameStateS2C\n");
+                break;
+            }
+            case Protocol::PacketType_SpawnPlayerS2C:
+            {
+                printf("SpawnPlayerS2C\n");
+                break;
+            }
             default:
                 printf("Received unknown packet type.\n");
                 break;
