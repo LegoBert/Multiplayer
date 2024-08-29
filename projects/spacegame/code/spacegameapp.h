@@ -10,6 +10,7 @@
 #include "render/window.h"
 #include "enet/enet.h"
 #include "render/input/inputserver.h"
+#include "spaceship.h"
 
 namespace Game
 {
@@ -37,5 +38,10 @@ private:
 	ENetAddress address;
 	ENetEvent event;
 	ENetPeer* peer = nullptr;
+
+	uint32_t playerID;
+
+	std::vector<SpaceShip> spaceShips;
+	std::vector<Laser> lasers;
 };
 } // namespace Game

@@ -325,8 +325,7 @@ namespace Game
         Physics::ColliderMeshId ShipCollider = Physics::LoadColliderMesh("assets/space/spaceship_physics.glb");
         ship.collider = Physics::CreateCollider(ShipCollider, ship.transform);
         ship.Teleport();
-        SpaceGameApp::spaceShips.push_back(ship);
-
+        
         // Create a new player object for network synchronization
         ship.player = Protocol::Player(
             uuid,                                                                                           // Unique player ID
@@ -335,9 +334,10 @@ namespace Game
             Protocol::Vec3(0, 0, 0),                                                                        // Initial acceleration (x, y, z)
             Protocol::Vec4(ship.orientation.x, ship.orientation.y, ship.orientation.z, ship.orientation.w)  // Initial rotation (quaternion x, y, z, w)
         );
+        SpaceGameApp::spaceShips.push_back(ship);
 
         // Send a message to all connected peers, informing them of the new player's spawn+
-        SendSpawnPlayerS2C(&ship.player, SpaceGameApp::peers);
+        //SendSpawnPlayerS2C(&ship.player, SpaceGameApp::peers);
 
         // Add the peer to the list of connected peers in the game
         SpaceGameApp::peers.push_back(peer);
@@ -385,23 +385,29 @@ namespace Game
     }
 
     void SpaceGameApp::SendGameStateS2C(std::vector<SpaceShip>& spaceShips, std::vector<Laser>& lasers, ENetPeer* peer) {
-        flatbuffers::FlatBufferBuilder builder;
+        flatbuffers::FlatBufferBuilder builder(1024);
+
         std::vector<Protocol::Player> p;
-        for (const auto& spaceShip : spaceShips) {
-            const Protocol::Player player = spaceShip.player;
-            p.push_back(player);
-        }
         std::vector<Protocol::Laser> l;
-        for (const auto& spaceShip : spaceShips) {
-            const Protocol::Player player = spaceShip.player;
+
+        for (auto& spaceShip : spaceShips) {
+            Protocol::Player player = spaceShip.player;
             p.push_back(player);
         }
-        auto gameStatePacket = Protocol::CreateGameStateS2CDirect(builder, &p, &l);
-        auto packetWrapper = Protocol::CreatePacketWrapper(builder, Protocol::PacketType_GameStateS2C, gameStatePacket.Union());
+        for (auto& laser : lasers) {
+            //l.push_back();
+        }
+
+        auto playersVec = builder.CreateVectorOfStructs(p.data(), p.size());
+        auto lasersVec = builder.CreateVectorOfStructs(l.data(), l.size());
+
+        auto gameState = Protocol::CreateGameStateS2C(builder, playersVec, lasersVec);
+        auto packetWrapper = Protocol::CreatePacketWrapper(builder, Protocol::PacketType_GameStateS2C, gameState.Union());
 
         builder.Finish(packetWrapper);
-        ENetPacket* packet = enet_packet_create(builder.GetBufferPointer(), builder.GetSize(), ENET_PACKET_FLAG_UNRELIABLE_FRAGMENT);
-        enet_peer_send(peer, 0, packet);
+
+        ENetPacket* enetPacket = enet_packet_create(builder.GetBufferPointer(), builder.GetSize(), ENET_PACKET_FLAG_RELIABLE);
+        enet_peer_send(peer, 0, enetPacket);
     }
 
     void SpaceGameApp::SendSpawnPlayerS2C(Protocol::Player* player, vector<ENetPeer*> peers) {

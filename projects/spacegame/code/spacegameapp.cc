@@ -78,8 +78,6 @@ namespace Game
         Camera* cam = CameraManager::GetCamera(CAMERA_MAIN);
         cam->projection = projection;
 
-        std::vector<Laser*> Lasers;
-
         // load all resources
         ModelId models[6] = {
             LoadModel("assets/space/Asteroid_1.glb"),
@@ -173,12 +171,12 @@ namespace Game
             lights[i] = Render::LightServer::CreatePointLight(translation, color, Core::RandomFloat() * 4.0f, 1.0f + (15 + Core::RandomFloat() * 10.0f));
         }
 
-        SpaceShip ship;
-        ship.model = LoadModel("assets/space/spaceship.glb");
-        Physics::ColliderMeshId ShipCollider = Physics::LoadColliderMesh("assets/space/spaceship_physics.glb");
-        ship.collider = Physics::CreateCollider(ShipCollider, ship.transform);
+        //SpaceShip ship;
+        //ship.model = LoadModel("assets/space/spaceship.glb");
+        /*Physics::ColliderMeshId ShipCollider = Physics::LoadColliderMesh("assets/space/spaceship_physics.glb");
+        ship.collider = Physics::CreateCollider(ShipCollider, ship.transform);*/
 
-
+        ModelId shipModel = LoadModel("assets/space/spaceship.glb");
         ModelId laserModel = LoadModel("assets/space/laser.glb");
 
         std::clock_t c_start = std::clock();
@@ -238,15 +236,15 @@ namespace Game
                 SendInputToServer(kbd, duration_cast<chrono::milliseconds>(chrono::system_clock::now().time_since_epoch()).count());
             }
             
-            //Shoot laser
-            uint64_t start_time = std::chrono::duration_cast<std::chrono::milliseconds>(std::chrono::system_clock::now().time_since_epoch()).count();
-            if (kbd->pressed[Input::Key::Code::Space])
-            {
-                Lasers.push_back(new Laser(ship.transform, start_time));
-            }
+            ////Shoot laser
+            //uint64_t start_time = std::chrono::duration_cast<std::chrono::milliseconds>(std::chrono::system_clock::now().time_since_epoch()).count();
+            //if (kbd->pressed[Input::Key::Code::Space])
+            //{
+            //    Lasers.push_back(new Laser(ship.transform, start_time));
+            //}
 
-            ship.Update(dt);
-            ship.CheckCollisions();
+            /*ship.Update(dt);
+            ship.CheckCollisions();*/
 
             // Draw some debug text
             Debug::DrawDebugText("Center", glm::vec3(0), { 1,0,0,1 });
@@ -258,17 +256,18 @@ namespace Game
             }
 
             // Update and draw all lasers
-            for (Laser* laser : Lasers)
+            for (Laser laser : SpaceGameApp::lasers)
             {
-                laser->Update(dt);
-                if (laser->marked_for_deletion)
-                    delete laser;
-                else
-                    RenderDevice::Draw(laserModel, laser->transform);
+                //Update here
+                RenderDevice::Draw(laserModel, laser.transform);
             }
-            Lasers.erase(std::remove_if(Lasers.begin(), Lasers.end(), [](Laser* laser) { return laser->marked_for_deletion; }), Lasers.end());
 
-            RenderDevice::Draw(ship.model, ship.transform);
+            // Update and draw all ships
+            for (SpaceShip ship : SpaceGameApp::spaceShips)
+            {
+                //Update here
+                RenderDevice::Draw(shipModel, ship.transform);
+            }
 
             // Execute the entire rendering pipeline
             RenderDevice::Render(this->window, dt);
@@ -319,8 +318,8 @@ namespace Game
             ImGui::SetNextWindowSize(windowSize);
             ImGui::Begin("Server Connection");
 
-            static char ip[16] = "";
-            static int port;
+            static char ip[16] = "192.168.1.103";
+            static int port = 7777;
 
             ImGui::InputText("IP-address", ip, sizeof(ip));
             ImGui::InputInt("Port", &port, 1);
@@ -438,13 +437,21 @@ namespace Game
                 const auto packet = packetWrapper->packet_as_ClientConnectS2C();
                 if (packet)
                 {
-                    printf("uuid assigned: %u\n", packet->uuid());
+                    SpaceGameApp::playerID = packet->uuid();
                 }
                 break;
             }
             case Protocol::PacketType_GameStateS2C:
             {
-                printf("GameStateS2C\n");
+                const auto packet = packetWrapper->packet_as_GameStateS2C();
+                if (packet)
+                {
+                    auto players = packet->players();
+                    auto lasers = packet->lasers();
+                    for (auto p : *players) {
+                        p->position();
+                    }
+                }
                 break;
             }
             case Protocol::PacketType_SpawnPlayerS2C:
