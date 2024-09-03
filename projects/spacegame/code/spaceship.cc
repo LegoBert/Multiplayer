@@ -43,6 +43,37 @@ namespace Game
         ParticleSystem::Instance()->AddEmitter(this->particleEmitterRight);
     }
 
+    SpaceShip::SpaceShip(int32_t uuid, glm::vec3 pos, glm::vec3 vel, glm::vec3 acc, glm::quat rot) {
+        uint32_t numParticles = 2048;
+        this->particleEmitterLeft = new ParticleEmitter(numParticles);
+        this->particleEmitterLeft->data = {
+            .origin = glm::vec4(this->position + (vec3(this->transform[2]) * emitterOffset),1),
+            .dir = glm::vec4(glm::vec3(-this->transform[2]), 0),
+            .startColor = glm::vec4(0.38f, 0.76f, 0.95f, 1.0f) * 2.0f,
+            .endColor = glm::vec4(0,0,0,1.0f),
+            .numParticles = numParticles,
+            .theta = glm::radians(0.0f),
+            .startSpeed = 1.2f,
+            .endSpeed = 0.0f,
+            .startScale = 0.025f,
+            .endScale = 0.0f,
+            .decayTime = 2.58f,
+            .randomTimeOffsetDist = 2.58f,
+            .looping = 1,
+            .emitterType = 1,
+            .discRadius = 0.020f
+        };
+        this->particleEmitterRight = new ParticleEmitter(numParticles);
+        this->particleEmitterRight->data = this->particleEmitterLeft->data;
+
+        ParticleSystem::Instance()->AddEmitter(this->particleEmitterLeft);
+        ParticleSystem::Instance()->AddEmitter(this->particleEmitterRight);
+        //
+        this->collider = Physics::CreateCollider(Physics::LoadColliderMesh("assets/space/spaceship_physics.glb"), this->transform);
+        this->uuid = uuid;
+        this->position = pos;
+    }
+
     void SpaceShip::Update(float dt)
     {
         Mouse* mouse = Input::GetDefaultMouse();
@@ -133,26 +164,17 @@ namespace Game
 
     void SpaceShip::Teleport()
     {
-        lives--;
-        if (lives <= 0)
-        {
-            //Game Over
-            //Not yet defined
-        }
-        else
-        {
-            //Reset Velocity
-            currentSpeed = 0.0f;
-            linearVelocity = glm::vec3(0);
+        //Reset Velocity
+        currentSpeed = 0.0f;
+        linearVelocity = glm::vec3(0);
 
-            //Spawn in a new position
-            position = SpawnInRandomPosition(50);
+        //Spawn in a new position
+        position = SpawnInRandomPosition(50);
 
-            //Reset orientation to look at the center of the map
-            glm::vec3 directionToCenter = glm::normalize(glm::vec3(0.0f, 0.0f, 0.0f) - position);
-            glm::quat newOrientation = glm::quatLookAt(-directionToCenter, glm::vec3(0.0f, -1.0f, 0.0f));
-            orientation = newOrientation;
-        }
+        //Reset orientation to look at the center of the map
+        glm::vec3 directionToCenter = glm::normalize(glm::vec3(0.0f, 0.0f, 0.0f) - position);
+        glm::quat newOrientation = glm::quatLookAt(-directionToCenter, glm::vec3(0.0f, -1.0f, 0.0f));
+        orientation = newOrientation;
     }
 
     glm::vec3

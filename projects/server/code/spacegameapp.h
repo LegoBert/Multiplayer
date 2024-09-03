@@ -37,6 +37,7 @@ private:
 	void SendClientConnectS2C(uint16_t uuid, ENetPeer* peer);
 	void SendGameStateS2C(std::vector<SpaceShip>& spaceShips, std::vector<Laser>& lasers, ENetPeer* peer);
 	void SendSpawnPlayerS2C(Protocol::Player* player, std::vector<ENetPeer*> peers);
+	void SendDespawnPlayerS2C(uint32_t uuid, std::vector<ENetPeer*> peers);
 
 
 	Display::Window* window;

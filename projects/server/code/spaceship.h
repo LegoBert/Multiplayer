@@ -71,6 +71,7 @@ namespace Game
     struct SpaceShip
     {
         SpaceShip();
+        ~SpaceShip() = default;
 
         glm::vec3 position = glm::vec3(0);
         glm::quat orientation = glm::identity<glm::quat>();
@@ -93,13 +94,13 @@ namespace Game
 
         uint16_t bitmap = 0;
         uint32_t id;
-        ENetPeer* peer = nullptr;
+        ENetPeer* peer;
         Protocol::Player player;
 
         Render::ModelId model;
         Physics::ColliderId collider;
-        Render::ParticleEmitter* particleEmitterLeft;
-        Render::ParticleEmitter* particleEmitterRight;
+        /*Render::ParticleEmitter* particleEmitterLeft;
+        Render::ParticleEmitter* particleEmitterRight;*/
         float emitterOffset = -0.5f;
 
         void Update(float dt);

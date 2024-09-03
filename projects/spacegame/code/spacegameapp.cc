@@ -22,6 +22,7 @@
 #include "spaceship.h"
 #include <vector>
 #include <proto.h>
+#include <iostream>
 
 using namespace Display;
 using namespace Render;
@@ -77,6 +78,7 @@ namespace Game
         glm::mat4 projection = glm::perspective(glm::radians(90.0f), float(w) / float(h), 0.01f, 1000.f);
         Camera* cam = CameraManager::GetCamera(CAMERA_MAIN);
         cam->projection = projection;
+        cam->view = glm::lookAt(glm::vec3(50,0,0), glm::vec3(0), glm::vec3(0,1,0));
 
         // load all resources
         ModelId models[6] = {
@@ -172,9 +174,10 @@ namespace Game
         }
 
         //SpaceShip ship;
-        //ship.model = LoadModel("assets/space/spaceship.glb");
-        /*Physics::ColliderMeshId ShipCollider = Physics::LoadColliderMesh("assets/space/spaceship_physics.glb");
-        ship.collider = Physics::CreateCollider(ShipCollider, ship.transform);*/
+        ////ship.model = LoadModel("assets/space/spaceship.glb");
+        ///**/Physics::ColliderMeshId ShipCollider = Physics::LoadColliderMesh("assets/space/spaceship_physics.glb");
+        //ship.collider = Physics::CreateCollider(ShipCollider, ship.transform);
+        //spaceShips.push_back(ship);
 
         ModelId shipModel = LoadModel("assets/space/spaceship.glb");
         ModelId laserModel = LoadModel("assets/space/laser.glb");
@@ -256,17 +259,20 @@ namespace Game
             }
 
             // Update and draw all lasers
-            for (Laser laser : SpaceGameApp::lasers)
+            for (Laser& laser : SpaceGameApp::lasers)
             {
                 //Update here
                 RenderDevice::Draw(laserModel, laser.transform);
             }
 
             // Update and draw all ships
-            for (SpaceShip ship : SpaceGameApp::spaceShips)
+            for (SpaceShip& ship : SpaceGameApp::spaceShips)
             {
                 //Update here
+                if(SpaceGameApp::playerID == ship.uuid)
+                    ship.Update(dt);
                 RenderDevice::Draw(shipModel, ship.transform);
+                ship.CheckCollisions();
             }
 
             // Execute the entire rendering pipeline
@@ -368,6 +374,8 @@ namespace Game
                         break;
                     case ENET_EVENT_TYPE_DISCONNECT:
                         puts("Disconnection succeeded.");
+                        SpaceGameApp::spaceShips.clear();
+                        SpaceGameApp::lasers.clear();
                         break;
                     }
                 }
@@ -438,6 +446,7 @@ namespace Game
                 if (packet)
                 {
                     SpaceGameApp::playerID = packet->uuid();
+                    printf("id recived: %u\n", packet->uuid());
                 }
                 break;
             }
@@ -446,17 +455,55 @@ namespace Game
                 const auto packet = packetWrapper->packet_as_GameStateS2C();
                 if (packet)
                 {
+                    printf("Gamestate recived\n");
                     auto players = packet->players();
                     auto lasers = packet->lasers();
                     for (auto p : *players) {
-                        p->position();
+                        const auto position = p->position();
+                        printf("ship id: %u\n", p->uuid());
+                        SpaceGameApp::spaceShips.push_back(SpaceShip(
+                            p->uuid(),
+                            glm::vec3(position.x(), position.y(), position.z()),
+                            glm::vec3(0),
+                            glm::vec3(0),
+                            glm::quat()
+                        ));
+                        /*glm::vec3 pos = glm::vec3(position.x(), position.y(), position.z());
+                        printf("Position: (%f, %f, %f)\n", pos.x, pos.y, pos.z);*/
                     }
                 }
                 break;
             }
             case Protocol::PacketType_SpawnPlayerS2C:
             {
-                printf("SpawnPlayerS2C\n");
+                const auto packet = packetWrapper->packet_as_SpawnPlayerS2C();
+                if (packet)
+                {
+                    printf("Spawn ship with id: %u\n", packet->player()->uuid());
+                    //const auto position = packet->player()->position();
+                    /*SpaceGameApp::spaceShips.push_back(SpaceShip(
+                        packet->player()->uuid(),
+                        glm::vec3(position.x(), position.y(), position.z()),
+                        glm::vec3(0),
+                        glm::vec3(0),
+                        glm::quat()
+                    ));*/
+                }
+                break;
+            }
+            case Protocol::PacketType_DespawnPlayerS2C:
+            {
+                const auto packet = packetWrapper->packet_as_DespawnPlayerS2C();
+                if (packet)
+                {
+                    printf("despawn ship with id: %u\n", packet->uuid());
+                    /*for (int i = 0; i < SpaceGameApp::spaceShips.size(); i++) {
+                        if (packet->uuid() == SpaceGameApp::spaceShips[i].uuid) {
+                            SpaceGameApp::spaceShips.erase(SpaceGameApp::spaceShips.begin() + i);
+                            break;
+                        }
+                    }*/
+                }
                 break;
             }
             default:

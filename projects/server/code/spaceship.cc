@@ -17,7 +17,7 @@ namespace Game
 {
     SpaceShip::SpaceShip()
     {
-        uint32_t numParticles = 2048;
+        /*uint32_t numParticles = 2048;
         this->particleEmitterLeft = new ParticleEmitter(numParticles);
         this->particleEmitterLeft->data = {
             .origin = glm::vec4(this->position + (vec3(this->transform[2]) * emitterOffset),1),
@@ -40,7 +40,7 @@ namespace Game
         this->particleEmitterRight->data = this->particleEmitterLeft->data;
 
         ParticleSystem::Instance()->AddEmitter(this->particleEmitterLeft);
-        ParticleSystem::Instance()->AddEmitter(this->particleEmitterRight);
+        ParticleSystem::Instance()->AddEmitter(this->particleEmitterRight);*/
     }
 
     void SpaceShip::Update(float dt) {
@@ -91,7 +91,7 @@ namespace Game
         this->camPos = mix(this->camPos, desiredCamPos, dt * cameraSmoothFactor);
         cam->view = lookAt(this->camPos, this->camPos + vec3(this->transform[2]), vec3(this->transform[1]));
 
-        const float thrusterPosOffset = 0.365f;
+        /*const float thrusterPosOffset = 0.365f;
         this->particleEmitterLeft->data.origin = glm::vec4(vec3(this->position + (vec3(this->transform[0]) * -thrusterPosOffset)) + (vec3(this->transform[2]) * emitterOffset), 1);
         this->particleEmitterLeft->data.dir = glm::vec4(glm::vec3(-this->transform[2]), 0);
         this->particleEmitterRight->data.origin = glm::vec4(vec3(this->position + (vec3(this->transform[0]) * thrusterPosOffset)) + (vec3(this->transform[2]) * emitterOffset), 1);
@@ -101,7 +101,7 @@ namespace Game
         this->particleEmitterLeft->data.startSpeed = 1.2 + (3.0f * t);
         this->particleEmitterLeft->data.endSpeed = 0.0f + (3.0f * t);
         this->particleEmitterRight->data.startSpeed = 1.2 + (3.0f * t);
-        this->particleEmitterRight->data.endSpeed = 0.0f + (3.0f * t);
+        this->particleEmitterRight->data.endSpeed = 0.0f + (3.0f * t);*/
         //this->particleEmitter->data.decayTime = 0.16f;//+ (0.01f  * t);
         //this->particleEmitter->data.randomTimeOffsetDist = 0.06f;/// +(0.01f * t);
     }

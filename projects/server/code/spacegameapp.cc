@@ -76,8 +76,6 @@ namespace Game
         Camera* cam = CameraManager::GetCamera(CAMERA_MAIN);
         cam->projection = projection;
 
-        std::vector<Laser*> Lasers;
-
         // load all resources
         ModelId models[6] = {
             LoadModel("assets/space/Asteroid_1.glb"),
@@ -214,8 +212,9 @@ namespace Game
                         printf("A new client connected from %x:%u.\n",
                             event.peer->address.host,
                             event.peer->address.port);
-                        SpawnSpaceShip(uuid++, event.peer);
                         SendClientConnectS2C(uuid, event.peer);
+                        SpawnSpaceShip(uuid, event.peer);
+                        uuid++;
                         SendGameStateS2C(SpaceGameApp::spaceShips, SpaceGameApp::lasers, event.peer);
                         break;
                     case ENET_EVENT_TYPE_RECEIVE:
@@ -225,7 +224,21 @@ namespace Game
                         printf("%x:%u disconnected.\n",
                             event.peer->address.host,
                             event.peer->address.port);
-                        // Despawn ships here!!!
+                        for (int i = 0; i < SpaceGameApp::peers.size(); i++) {
+                            if (event.peer == SpaceGameApp::peers[i]) {
+                                SpaceGameApp::peers.erase(SpaceGameApp::peers.begin() + i);
+                                //printf("peers: %u\n", SpaceGameApp::peers.size());
+                                break;
+                            }
+                        }
+                        for (int i = 0; i < SpaceGameApp::spaceShips.size(); i++) {
+                            if (event.peer == SpaceGameApp::spaceShips[i].peer) {
+                                SendDespawnPlayerS2C(SpaceGameApp::spaceShips[i].id, SpaceGameApp::peers);
+                                SpaceGameApp::spaceShips.erase(SpaceGameApp::spaceShips.begin() + i);
+                                //printf("ships: %u\n", SpaceGameApp::spaceShips.size());
+                                break;
+                            }
+                        }
                         break;
                 }
             }
@@ -337,7 +350,7 @@ namespace Game
         SpaceGameApp::spaceShips.push_back(ship);
 
         // Send a message to all connected peers, informing them of the new player's spawn+
-        //SendSpawnPlayerS2C(&ship.player, SpaceGameApp::peers);
+        SendSpawnPlayerS2C(&ship.player, SpaceGameApp::peers);
 
         // Add the peer to the list of connected peers in the game
         SpaceGameApp::peers.push_back(peer);
@@ -421,7 +434,7 @@ namespace Game
             enet_peer_send(peer, 0, packet);
     }
 
-    void SendDespawnPlayerS2C(uint32_t uuid, vector<ENetPeer*> peers) {
+    void SpaceGameApp::SendDespawnPlayerS2C(uint32_t uuid, vector<ENetPeer*> peers) {
         flatbuffers::FlatBufferBuilder builder;
         auto telPacket = Protocol::CreateDespawnPlayerS2C(builder, uuid);
         auto packetWrapper = Protocol::CreatePacketWrapper(builder, Protocol::PacketType_DespawnPlayerS2C, telPacket.Union());

@@ -69,6 +69,7 @@ namespace Game
     struct SpaceShip
     {
         SpaceShip();
+        SpaceShip(int32_t uuid , glm::vec3 pos, glm::vec3 vel, glm::vec3 acc, glm::quat rot);
 
         glm::vec3 position = glm::vec3(0);
         glm::quat orientation = glm::identity<glm::quat>();
@@ -89,9 +90,9 @@ namespace Game
         float rotYSmooth = 0;
         float rotZSmooth = 0;
 
-        int16 lives = 3;
+        uint32_t uuid;
 
-        Render::ModelId model;
+        //Render::ModelId model;
         Physics::ColliderId collider;
         Render::ParticleEmitter* particleEmitterLeft;
         Render::ParticleEmitter* particleEmitterRight;
