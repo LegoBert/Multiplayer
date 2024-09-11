@@ -23,6 +23,7 @@
 #include <vector>
 #include "enet/enet.h"
 #include <proto.h>
+#include <utility>
 
 using namespace Display;
 using namespace Render;
@@ -231,11 +232,12 @@ namespace Game
                                 break;
                             }
                         }
+                        //printf("spaceShips: %u\n", SpaceGameApp::spaceShips.size());
                         for (int i = 0; i < SpaceGameApp::spaceShips.size(); i++) {
                             if (event.peer == SpaceGameApp::spaceShips[i].peer) {
                                 SendDespawnPlayerS2C(SpaceGameApp::spaceShips[i].id, SpaceGameApp::peers);
                                 SpaceGameApp::spaceShips.erase(SpaceGameApp::spaceShips.begin() + i);
-                                //printf("ships: %u\n", SpaceGameApp::spaceShips.size());
+                                //printf("spaceShips: %u\n", SpaceGameApp::spaceShips.size());
                                 break;
                             }
                         }
