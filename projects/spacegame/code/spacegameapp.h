@@ -39,7 +39,7 @@ private:
 	ENetEvent event;
 	ENetPeer* peer = nullptr;
 
-	uint32_t playerID;
+	uint32_t playerID = -1;
 
 	std::vector<SpaceShip> spaceShips;
 	std::vector<Laser> lasers;

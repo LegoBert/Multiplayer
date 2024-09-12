@@ -225,21 +225,30 @@ namespace Game
                         printf("%x:%u disconnected.\n",
                             event.peer->address.host,
                             event.peer->address.port);
-                        for (int i = 0; i < SpaceGameApp::peers.size(); i++) {
-                            if (event.peer == SpaceGameApp::peers[i]) {
-                                SpaceGameApp::peers.erase(SpaceGameApp::peers.begin() + i);
-                                //printf("peers: %u\n", SpaceGameApp::peers.size());
-                                break;
-                            }
-                        }
-                        for (int i = 0; i < SpaceGameApp::spaceShips.size(); i++) {
-                            if (event.peer == SpaceGameApp::spaceShips[i].peer) {
-                                SendDespawnPlayerS2C(SpaceGameApp::spaceShips[i].id, SpaceGameApp::peers);
-                                SpaceGameApp::spaceShips.erase(SpaceGameApp::spaceShips.begin() + i);
-                                //printf("spaceShips: %u\n", SpaceGameApp::spaceShips.size());
-                                break;
-                            }
-                        }
+                        ENetPeer* peerToDespawn = event.peer;
+                        //for (int i = 0; i < SpaceGameApp::peers.size(); i++) {
+                        //    if (event.peer == SpaceGameApp::peers[i]) {
+                        //        SpaceGameApp::peers.erase(SpaceGameApp::peers.begin() + i);
+                        //        //printf("peers: %u\n", SpaceGameApp::peers.size());
+                        //        break;
+                        //    }
+                        //}
+                        //for (int i = 0; i < SpaceGameApp::spaceShips.size(); i++) {
+                        //    if (event.peer == SpaceGameApp::spaceShips[i].peer) {
+                        //        SendDespawnPlayerS2C(SpaceGameApp::spaceShips[i].id, SpaceGameApp::peers);
+                        //        SpaceGameApp::spaceShips.erase(SpaceGameApp::spaceShips.begin() + i);
+                        //        //printf("spaceShips: %u\n", SpaceGameApp::spaceShips.size());
+                        //        break;
+                        //    }
+                        //}
+                        printf("spaceShips: %u\n", SpaceGameApp::spaceShips.size());
+                        auto it = std::find_if(spaceShips.begin(), spaceShips.end(), [peerToDespawn](const SpaceShip& player) {
+                            return player.peer == peerToDespawn;
+                        });
+
+                        if (it != spaceShips.end())
+                            spaceShips.erase(it);
+                        printf("spaceShips: %u\n", SpaceGameApp::spaceShips.size());
                         break;
                 }
             }
@@ -339,21 +348,17 @@ namespace Game
         Physics::ColliderMeshId ShipCollider = Physics::LoadColliderMesh("assets/space/spaceship_physics.glb");
         ship.collider = Physics::CreateCollider(ShipCollider, ship.transform);
         ship.Teleport();
-        
         // Create a new player object for network synchronization
         ship.player = Protocol::Player(
             uuid,                                                                                           // Unique player ID
             Protocol::Vec3(ship.position[0], ship.position[1], ship.position[2]),                           // Initial position (x, y, z)
             Protocol::Vec3(0, 0, 0),                                                                        // Initial velocity (x, y, z)
             Protocol::Vec3(0, 0, 0),                                                                        // Initial acceleration (x, y, z)
-            Protocol::Vec4(ship.orientation.w, ship.orientation.x, ship.orientation.y, ship.orientation.z)  // Initial rotation (quaternion x, y, z, w)
+            Protocol::Vec4(ship.orientation.x, ship.orientation.y, ship.orientation.z, ship.orientation.w)  // Initial rotation (quaternion x, y, z, w)
         );
-        //printf("Orientation :) (%f, %f, %f, %f)\n", ship.orientation.w, ship.orientation.x, ship.orientation.y, ship.orientation.z);
         SpaceGameApp::spaceShips.push_back(ship);
-
         // Send a message to all connected peers, informing them of the new player's spawn+
         SendSpawnPlayerS2C(&ship.player, SpaceGameApp::peers);
-
         // Add the peer to the list of connected peers in the game
         SpaceGameApp::peers.push_back(peer);
     }

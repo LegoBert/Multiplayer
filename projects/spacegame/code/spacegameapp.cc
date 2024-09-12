@@ -251,6 +251,7 @@ namespace Game
 
             // Draw some debug text
             Debug::DrawDebugText("Center", glm::vec3(0), { 1,0,0,1 });
+            printf("amount of players in clients vector %u\n", SpaceGameApp::spaceShips.size());
 
             // Store all drawcalls in the render device
             for (auto const& asteroid : asteroids)
@@ -366,7 +367,7 @@ namespace Game
             if (ImGui::Button("Disconnect") && peer != nullptr && peer->state == ENET_PEER_STATE_CONNECTED)
             {
                 enet_peer_disconnect(peer, 0);
-                while (enet_host_service(client, &event, 3000) > 0)
+                while (enet_host_service(client, &event, 100) > 0)
                 {
                     switch (event.type)
                     {
@@ -377,6 +378,7 @@ namespace Game
                         puts("Disconnection succeeded.");
                         SpaceGameApp::spaceShips.clear();
                         SpaceGameApp::lasers.clear();
+                        playerID = -1;
                         break;
                     }
                 }
@@ -446,8 +448,8 @@ namespace Game
                 const auto packet = packetWrapper->packet_as_ClientConnectS2C();
                 if (packet)
                 {
-                    SpaceGameApp::playerID = packet->uuid();
                     printf("id recived: %u\n", packet->uuid());
+                    SpaceGameApp::playerID = packet->uuid();
                 }
                 break;
             }
@@ -460,14 +462,16 @@ namespace Game
                     auto players = packet->players();
                     auto lasers = packet->lasers();
                     for (auto p : *players) {
-                        const auto position = p->position();
-                        const auto orientation = p->direction();
+                        const auto& position = p->position();
+                        const auto& velocity = p->velocity();
+                        const auto& acceleration = p->acceleration();
+                        const auto& orientation = p->direction();
                         SpaceGameApp::spaceShips.push_back(SpaceShip(
                             p->uuid(),
                             glm::vec3(position.x(), position.y(), position.z()),
-                            glm::vec3(0),
-                            glm::vec3(0),
-                            glm::quat(orientation.x(), orientation.y(), orientation.z(), orientation.w())
+                            glm::vec3(velocity.x(), velocity.y(), velocity.z()),
+                            glm::vec3(acceleration.x(), acceleration.y(), acceleration.z()),
+                            glm::quat(orientation.w(), orientation.x(), orientation.y(), orientation.z())
                         ));
                     }
                 }
@@ -479,13 +483,15 @@ namespace Game
                 if (packet)
                 {
                     printf("Spawn ship with id: %u\n", packet->player()->uuid());
-                    const auto position = packet->player()->position();
-                    const auto orientation = packet->player()->direction();
+                    const auto& position = packet->player()->position();
+                    const auto& velocity = packet->player()->velocity();
+                    const auto& acceleration = packet->player()->acceleration();
+                    const auto& orientation = packet->player()->direction();
                     SpaceGameApp::spaceShips.push_back(SpaceShip(
                         packet->player()->uuid(),
                         glm::vec3(position.x(), position.y(), position.z()),
-                        glm::vec3(0),
-                        glm::vec3(0),
+                        glm::vec3(velocity.x(), velocity.y(), velocity.z()),
+                        glm::vec3(acceleration.x(), acceleration.y(), acceleration.z()),
                         glm::quat(orientation.w(), orientation.x(), orientation.y(), orientation.z())
                     ));
                 }

@@ -70,6 +70,7 @@ namespace Game
     {
         SpaceShip();
         SpaceShip(int32_t uuid , glm::vec3 pos, glm::vec3 vel, glm::vec3 acc, glm::quat ori);
+        ~SpaceShip();
 
         glm::vec3 position = glm::vec3(0);
         glm::quat orientation = glm::identity<glm::quat>();
@@ -92,7 +93,6 @@ namespace Game
 
         uint32_t uuid;
 
-        //Render::ModelId model;
         Physics::ColliderId collider;
         Render::ParticleEmitter* particleEmitterLeft;
         Render::ParticleEmitter* particleEmitterRight;

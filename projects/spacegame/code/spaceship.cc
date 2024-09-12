@@ -44,6 +44,12 @@ namespace Game
     }
 
     SpaceShip::SpaceShip(int32_t uuid, glm::vec3 pos, glm::vec3 vel, glm::vec3 acc, glm::quat ori) {
+        this->uuid = uuid;
+        this->position = pos;
+        this->linearVelocity = vel;
+        this->orientation = ori;
+        this->transform = translate(this->position) * (mat4)this->orientation;
+        // Particles
         uint32_t numParticles = 2048;
         this->particleEmitterLeft = new ParticleEmitter(numParticles);
         this->particleEmitterLeft->data = {
@@ -65,15 +71,15 @@ namespace Game
         };
         this->particleEmitterRight = new ParticleEmitter(numParticles);
         this->particleEmitterRight->data = this->particleEmitterLeft->data;
-
         ParticleSystem::Instance()->AddEmitter(this->particleEmitterLeft);
         ParticleSystem::Instance()->AddEmitter(this->particleEmitterRight);
-        //
-        this->transform = translate(this->position) * (mat4)this->orientation;
+        // Collider
         this->collider = Physics::CreateCollider(Physics::LoadColliderMesh("assets/space/spaceship_physics.glb"), this->transform);
-        this->uuid = uuid;
-        this->position = pos;
-        this->orientation = ori;
+    }
+
+    SpaceShip::~SpaceShip() {
+        /*ParticleSystem::Instance()->RemoveEmitter(this->particleEmitterLeft);
+        ParticleSystem::Instance()->RemoveEmitter(this->particleEmitterRight);*/
     }
 
     void SpaceShip::Update(float dt)
