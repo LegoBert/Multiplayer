@@ -76,8 +76,7 @@ namespace Game
     }
 
     SpaceShip::~SpaceShip() {
-        /*ParticleSystem::Instance()->RemoveEmitter(this->particleEmitterLeft);
-        ParticleSystem::Instance()->RemoveEmitter(this->particleEmitterRight);*/
+    
     }
 
     void SpaceShip::Update(float dt)

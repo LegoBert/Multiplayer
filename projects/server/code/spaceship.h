@@ -73,6 +73,18 @@ namespace Game
         SpaceShip() = default;
         ~SpaceShip() = default;
         SpaceShip& operator=(const SpaceShip& other) {
+            if (this != &other) {
+                position = other.position;
+                orientation = other.orientation;
+                camPos = other.camPos;
+                transform = other.transform;
+                linearVelocity = other.linearVelocity;
+                currentSpeed = other.currentSpeed;
+                // Copy other relevant fields as needed
+                uuid = other.uuid;
+                peer = other.peer; // Consider how you want to manage peer ownership
+                player = other.player; // Assuming Protocol::Player has a proper copy assignment operator
+            }
             return *this;
         }
 
@@ -96,7 +108,7 @@ namespace Game
         float rotZSmooth = 0;
 
         uint16_t bitmap = 0;
-        uint32_t id;
+        uint32_t uuid;
         ENetPeer* peer;
         Protocol::Player player;
 

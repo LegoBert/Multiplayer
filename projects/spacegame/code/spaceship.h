@@ -71,6 +71,26 @@ namespace Game
         SpaceShip();
         SpaceShip(int32_t uuid , glm::vec3 pos, glm::vec3 vel, glm::vec3 acc, glm::quat ori);
         ~SpaceShip();
+        SpaceShip& operator=(const SpaceShip& other) {
+            if (this != &other) {
+                position = other.position;
+                orientation = other.orientation;
+                camPos = other.camPos;
+                transform = other.transform;
+                linearVelocity = other.linearVelocity;
+                currentSpeed = other.currentSpeed;
+                rotationZ = other.rotationZ;
+                rotXSmooth = other.rotXSmooth;
+                rotYSmooth = other.rotYSmooth;
+                rotZSmooth = other.rotZSmooth;
+                uuid = other.uuid;
+                // Handle particle emitters if necessary
+                // Assuming we need to copy the pointers (make sure to manage ownership correctly)
+                particleEmitterLeft = other.particleEmitterLeft;
+                particleEmitterRight = other.particleEmitterRight;
+            }
+            return *this;
+        }
 
         glm::vec3 position = glm::vec3(0);
         glm::quat orientation = glm::identity<glm::quat>();

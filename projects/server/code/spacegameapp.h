@@ -39,6 +39,14 @@ private:
 	void SendSpawnPlayerS2C(Protocol::Player* player, std::vector<ENetPeer*> peers);
 	void SendDespawnPlayerS2C(uint32_t uuid, std::vector<ENetPeer*> peers);
 
+	void RemoveShip(int id) {
+		for (int i = 0; i < spaceShips.size(); i++) {
+			if (spaceShips[i].uuid = id) {
+				SpaceGameApp::spaceShips.erase(SpaceGameApp::spaceShips.begin() + i);
+				return;
+			}
+		}
+	};
 
 	Display::Window* window;
 

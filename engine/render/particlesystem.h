@@ -62,6 +62,12 @@ public:
         this->emitters.erase(std::find(this->emitters.begin(), this->emitters.end(), emitter));
     }
 
+    void ClearEmitters()
+    {
+        // Assuming `emitters` is a std::vector<std::unique_ptr<Emitter>>
+        emitters.clear();  // No need to manually delete; unique_ptr will handle that
+    }
+
 private:
     std::vector<ParticleEmitter*> emitters;
     friend class RenderDevice;

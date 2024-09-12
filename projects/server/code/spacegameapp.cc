@@ -232,12 +232,28 @@ namespace Game
                                 break;
                             }
                         }
+                        //SpaceGameApp::spaceShips.erase(SpaceGameApp::spaceShips.begin() + 1);
+                        //SpaceGameApp::spaceShips.pop_back();
+                        //for (int i = 0; i < SpaceGameApp::spaceShips.size(); i++) {
+                        //    if (event.peer == SpaceGameApp::spaceShips[i].peer) {
+                        //        cout << SpaceGameApp::spaceShips[i].uuid << " is the ship that should get removed." << endl;
+                        //        // Send the despawn message
+                        //        SendDespawnPlayerS2C(SpaceGameApp::spaceShips[i].uuid, SpaceGameApp::peers);
+                        //        // Swap the target ship with the last ship
+                        //        std::swap(SpaceGameApp::spaceShips[i], SpaceGameApp::spaceShips.back());
+                        //        // Remove the last ship (the one we just swapped)
+                        //        SpaceGameApp::spaceShips.pop_back();
+                        //        break; // Exit after removing the ship
+                        //    }
+                        //}
                         auto it = std::find_if(spaceShips.begin(), spaceShips.end(), [peerToDespawn](const SpaceShip& player) {
                             return player.peer == peerToDespawn;
                         });
 
-                        if (it != spaceShips.end())
+                        if (it != spaceShips.end()) {
+                            SendDespawnPlayerS2C(it->uuid, SpaceGameApp::peers);
                             spaceShips.erase(it);
+                        }
                         break;
                 }
             }
@@ -313,9 +329,11 @@ namespace Game
             // New window showing the number of players and peer details
             ImGui::Begin("Player Info");
 
-            // Assuming `spaceShips` is a container storing the players
+            // Display the number of players
             int playerCount = static_cast<int>(spaceShips.size());
             ImGui::Text("Number of players: %d", playerCount);
+
+            ImGui::Separator();
 
             // Assuming `peers` is a container storing active ENetPeer connections
             ImGui::Text("Peers:");
@@ -331,9 +349,42 @@ namespace Game
                     peer->address.port);
             }
 
+            // Add a divider before the list of ships
+            ImGui::Separator();
+
+            // Loop through each spaceship and display UUID, position, and peer details
+            for (const SpaceShip& ship : spaceShips)
+            {
+                // Display ship's UUID (assuming it's an unsigned int)
+                ImGui::Text("Ship ID: %u", ship.uuid);
+
+                // Display the ship's position (assuming it's glm::vec3 or similar)
+                ImGui::Text("Position: X: %.2f, Y: %.2f, Z: %.2f",
+                    ship.position.x, ship.position.y, ship.position.z);
+
+                // Display the peer's IP and port (assuming ship.peer is a valid ENetPeer pointer)
+                if (ship.peer)  // Ensure the peer is valid
+                {
+                    ImGui::Text("Peer IP: %u.%u.%u.%u",
+                        (ship.peer->address.host & 0xff),
+                        (ship.peer->address.host >> 8) & 0xff,
+                        (ship.peer->address.host >> 16) & 0xff,
+                        (ship.peer->address.host >> 24) & 0xff);
+
+                    ImGui::Text("Peer Port: %u", ship.peer->address.port);
+                }
+                else
+                {
+                    ImGui::Text("No peer connected");
+                }
+
+                // Add a separator between each ship's details
+                ImGui::Separator();
+            }
+
             ImGui::End();  // End of Player Info window
 
-            // Dispatch debug text drawing
+            // Dispatch debug text drawing (if necessary in your app)
             Debug::DispatchDebugTextDrawing();
         }
     }
@@ -343,9 +394,8 @@ namespace Game
     void SpaceGameApp::SpawnSpaceShip(uint32_t uuid, ENetPeer* peer) {
         //Create a new SpaceShip instance
         SpaceShip ship;
-        ship.id = uuid;
+        ship.uuid = uuid;
         ship.peer = peer;
-        Physics::ColliderMeshId ShipCollider = Physics::LoadColliderMesh("assets/space/spaceship_physics.glb");
         ship.Teleport();
         // Create a new player object for network synchronization
         ship.player = Protocol::Player(

@@ -8,6 +8,7 @@
 #include "imgui.h"
 #include "render/renderdevice.h"
 #include "render/shaderresource.h"
+#include "render/particlesystem.h"
 #include <vector>
 #include "render/textureresource.h"
 #include "render/model.h"
@@ -365,6 +366,7 @@ namespace Game
             ImGui::SameLine();
             if (ImGui::Button("Disconnect") && peer != nullptr && peer->state == ENET_PEER_STATE_CONNECTED)
             {
+                Render::ParticleSystem::Instance()->ClearEmitters();
                 SpaceGameApp::spaceShips.clear();
                 SpaceGameApp::lasers.clear();
                 playerID = -1;
@@ -387,15 +389,36 @@ namespace Game
             // New window showing the number of players and peer details
             ImGui::Begin("Player Info");
 
-
+            // Display assigned player ID
             ImGui::Text("Assigned id: %d", playerID);
-            // Assuming `spaceShips` is a container storing the players
+
+            // Add a divider
+            ImGui::Separator();
+
+            // Display the number of players
             int playerCount = static_cast<int>(spaceShips.size());
             ImGui::Text("Number of players: %d", playerCount);
 
+            // Add another divider before the list of ships
+            ImGui::Separator();
+
+            // Loop through each spaceship and display UUID and position
+            for (const SpaceShip& ship : SpaceGameApp::spaceShips)
+            {
+                // Display ship's UUID (assuming it's a string)
+                ImGui::Text("Ship ID: %u", ship.uuid);
+
+                // Display the ship's position (assuming it's glm::vec3)
+                ImGui::Text("Position: X: %.2f, Y: %.2f, Z: %.2f",
+                    ship.position.x, ship.position.y, ship.position.z);
+
+                // Add a separator between each ship's details
+                ImGui::Separator();
+            }
+
             ImGui::End();  // End of Player Info window
 
-            // Dispatch debug text drawing
+            // Dispatch debug text drawing (if necessary in your app)
             Debug::DispatchDebugTextDrawing();
         }
     }
@@ -515,8 +538,21 @@ namespace Game
                 if (packet)
                 {
                     printf("despawn ship with id: %u\n", packet->uuid());
+                    auto toDespawn = packet->uuid();
+                    auto it = std::find_if(spaceShips.begin(), spaceShips.end(), [toDespawn](const SpaceShip& player) {
+                        return player.uuid == toDespawn;
+                        });
+
+                    if (it != spaceShips.end()) {
+                        Render::ParticleSystem::Instance()->RemoveEmitter(it->particleEmitterLeft);
+                        Render::ParticleSystem::Instance()->RemoveEmitter(it->particleEmitterRight);
+                        spaceShips.erase(it);
+                    }
+
                     /*for (int i = 0; i < SpaceGameApp::spaceShips.size(); i++) {
                         if (packet->uuid() == SpaceGameApp::spaceShips[i].uuid) {
+                            Render::ParticleSystem::Instance()->RemoveEmitter(SpaceGameApp::spaceShips[i].particleEmitterRight);
+                            Render::ParticleSystem::Instance()->RemoveEmitter(SpaceGameApp::spaceShips[i].particleEmitterLeft);
                             SpaceGameApp::spaceShips.erase(SpaceGameApp::spaceShips.begin() + i);
                             break;
                         }
