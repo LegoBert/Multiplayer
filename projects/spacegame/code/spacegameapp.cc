@@ -251,7 +251,6 @@ namespace Game
 
             // Draw some debug text
             Debug::DrawDebugText("Center", glm::vec3(0), { 1,0,0,1 });
-            printf("amount of players in clients vector %u\n", SpaceGameApp::spaceShips.size());
 
             // Store all drawcalls in the render device
             for (auto const& asteroid : asteroids)
@@ -366,6 +365,9 @@ namespace Game
             ImGui::SameLine();
             if (ImGui::Button("Disconnect") && peer != nullptr && peer->state == ENET_PEER_STATE_CONNECTED)
             {
+                SpaceGameApp::spaceShips.clear();
+                SpaceGameApp::lasers.clear();
+                playerID = -1;
                 enet_peer_disconnect(peer, 0);
                 while (enet_host_service(client, &event, 100) > 0)
                 {
@@ -376,15 +378,25 @@ namespace Game
                         break;
                     case ENET_EVENT_TYPE_DISCONNECT:
                         puts("Disconnection succeeded.");
-                        SpaceGameApp::spaceShips.clear();
-                        SpaceGameApp::lasers.clear();
-                        playerID = -1;
                         break;
                     }
                 }
             }
-
             ImGui::End();
+
+            // New window showing the number of players and peer details
+            ImGui::Begin("Player Info");
+
+
+            ImGui::Text("Assigned id: %d", playerID);
+            // Assuming `spaceShips` is a container storing the players
+            int playerCount = static_cast<int>(spaceShips.size());
+            ImGui::Text("Number of players: %d", playerCount);
+
+            ImGui::End();  // End of Player Info window
+
+            // Dispatch debug text drawing
+            Debug::DispatchDebugTextDrawing();
         }
     }
 

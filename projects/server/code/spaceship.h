@@ -70,52 +70,9 @@ namespace Game
 
     struct SpaceShip
     {
-        SpaceShip();
+        SpaceShip() = default;
         ~SpaceShip() = default;
-        //// Copy constructor
-        //SpaceShip(const SpaceShip& other) {
-        //    // Copy all fields, ensure deep copying of pointer resources if needed
-        //    position = other.position;
-        //    orientation = other.orientation;
-        //    camPos = other.camPos;
-        //    transform = other.transform;
-        //    linearVelocity = other.linearVelocity;
-        //    currentSpeed = other.currentSpeed;
-        //    rotationZ = other.rotationZ;
-        //    rotXSmooth = other.rotXSmooth;
-        //    rotYSmooth = other.rotYSmooth;
-        //    rotZSmooth = other.rotZSmooth;
-        //    bitmap = other.bitmap;
-        //    id = other.id;
-        //    // Shallow copy of the peer pointer; if a deep copy is needed, you will have to manually create a new ENetPeer
-        //    peer = other.peer;
-        //    player = other.player;
-        //    model = other.model;
-        //    collider = other.collider;
-        //    emitterOffset = other.emitterOffset;
-        //}
-        //// Copy assignment operator
         SpaceShip& operator=(const SpaceShip& other) {
-            //if (this != &other) {
-            //    // Same logic as the copy constructor
-            //    position = other.position;
-            //    orientation = other.orientation;
-            //    camPos = other.camPos;
-            //    transform = other.transform;
-            //    linearVelocity = other.linearVelocity;
-            //    currentSpeed = other.currentSpeed;
-            //    rotationZ = other.rotationZ;
-            //    rotXSmooth = other.rotXSmooth;
-            //    rotYSmooth = other.rotYSmooth;
-            //    rotZSmooth = other.rotZSmooth;
-            //    bitmap = other.bitmap;
-            //    id = other.id;
-            //    peer = other.peer;  // Shallow copy; adjust if needed
-            //    player = other.player;
-            //    model = other.model;
-            //    collider = other.collider;
-            //    emitterOffset = other.emitterOffset;
-            //}
             return *this;
         }
 
@@ -142,12 +99,6 @@ namespace Game
         uint32_t id;
         ENetPeer* peer;
         Protocol::Player player;
-
-        Render::ModelId model;
-        Physics::ColliderId collider;
-        /*Render::ParticleEmitter* particleEmitterLeft;
-        Render::ParticleEmitter* particleEmitterRight;*/
-        float emitterOffset = -0.5f;
 
         void Update(float dt);
 

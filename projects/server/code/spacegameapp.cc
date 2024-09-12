@@ -226,29 +226,18 @@ namespace Game
                             event.peer->address.host,
                             event.peer->address.port);
                         ENetPeer* peerToDespawn = event.peer;
-                        //for (int i = 0; i < SpaceGameApp::peers.size(); i++) {
-                        //    if (event.peer == SpaceGameApp::peers[i]) {
-                        //        SpaceGameApp::peers.erase(SpaceGameApp::peers.begin() + i);
-                        //        //printf("peers: %u\n", SpaceGameApp::peers.size());
-                        //        break;
-                        //    }
-                        //}
-                        //for (int i = 0; i < SpaceGameApp::spaceShips.size(); i++) {
-                        //    if (event.peer == SpaceGameApp::spaceShips[i].peer) {
-                        //        SendDespawnPlayerS2C(SpaceGameApp::spaceShips[i].id, SpaceGameApp::peers);
-                        //        SpaceGameApp::spaceShips.erase(SpaceGameApp::spaceShips.begin() + i);
-                        //        //printf("spaceShips: %u\n", SpaceGameApp::spaceShips.size());
-                        //        break;
-                        //    }
-                        //}
-                        printf("spaceShips: %u\n", SpaceGameApp::spaceShips.size());
+                        for (int i = 0; i < SpaceGameApp::peers.size(); i++) {
+                            if (event.peer == SpaceGameApp::peers[i]) {
+                                SpaceGameApp::peers.erase(SpaceGameApp::peers.begin() + i);
+                                break;
+                            }
+                        }
                         auto it = std::find_if(spaceShips.begin(), spaceShips.end(), [peerToDespawn](const SpaceShip& player) {
                             return player.peer == peerToDespawn;
                         });
 
                         if (it != spaceShips.end())
                             spaceShips.erase(it);
-                        printf("spaceShips: %u\n", SpaceGameApp::spaceShips.size());
                         break;
                 }
             }
@@ -291,7 +280,7 @@ namespace Game
             //RenderDevice::Draw(ship.model, ship.transform);
 
             // Execute the entire rendering pipeline
-            //RenderDevice::Render(this->window, dt);
+            RenderDevice::Render(this->window, dt);
 
             // transfer new frame to window
             this->window->SwapBuffers();
@@ -321,19 +310,30 @@ namespace Game
     {
         if (this->window->IsOpen())
         {
-            ImGui::Begin("Debug");
-            Core::CVar* r_draw_light_spheres = Core::CVarGet("r_draw_light_spheres");
-            int drawLightSpheres = Core::CVarReadInt(r_draw_light_spheres);
-            if (ImGui::Checkbox("Draw Light Spheres", (bool*)&drawLightSpheres))
-                Core::CVarWriteInt(r_draw_light_spheres, drawLightSpheres);
+            // New window showing the number of players and peer details
+            ImGui::Begin("Player Info");
 
-            Core::CVar* r_draw_light_sphere_id = Core::CVarGet("r_draw_light_sphere_id");
-            int lightSphereId = Core::CVarReadInt(r_draw_light_sphere_id);
-            if (ImGui::InputInt("LightSphereId", (int*)&lightSphereId))
-                Core::CVarWriteInt(r_draw_light_sphere_id, lightSphereId);
-            
-            ImGui::End();
+            // Assuming `spaceShips` is a container storing the players
+            int playerCount = static_cast<int>(spaceShips.size());
+            ImGui::Text("Number of players: %d", playerCount);
 
+            // Assuming `peers` is a container storing active ENetPeer connections
+            ImGui::Text("Peers:");
+
+            for (const ENetPeer* peer : peers) // Assuming `peers` holds `ENetPeer*` pointers
+            {
+                // Print peer address and port
+                ImGui::Text("Peer: %u.%u.%u.%u:%u",
+                    (peer->address.host & 0xff),
+                    (peer->address.host >> 8) & 0xff,
+                    (peer->address.host >> 16) & 0xff,
+                    (peer->address.host >> 24) & 0xff,
+                    peer->address.port);
+            }
+
+            ImGui::End();  // End of Player Info window
+
+            // Dispatch debug text drawing
             Debug::DispatchDebugTextDrawing();
         }
     }
@@ -346,7 +346,6 @@ namespace Game
         ship.id = uuid;
         ship.peer = peer;
         Physics::ColliderMeshId ShipCollider = Physics::LoadColliderMesh("assets/space/spaceship_physics.glb");
-        ship.collider = Physics::CreateCollider(ShipCollider, ship.transform);
         ship.Teleport();
         // Create a new player object for network synchronization
         ship.player = Protocol::Player(
@@ -434,7 +433,6 @@ namespace Game
         flatbuffers::FlatBufferBuilder builder;
         auto telPacket = Protocol::CreateSpawnPlayerS2C(builder, player);
         auto packetWrapper = Protocol::CreatePacketWrapper(builder, Protocol::PacketType_SpawnPlayerS2C, telPacket.Union());
-
         builder.Finish(packetWrapper);
         ENetPacket* packet = enet_packet_create(builder.GetBufferPointer(), builder.GetSize(), ENET_PACKET_FLAG_UNRELIABLE_FRAGMENT);
         for (ENetPeer* peer : peers)

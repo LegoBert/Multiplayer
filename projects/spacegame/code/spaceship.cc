@@ -73,8 +73,6 @@ namespace Game
         this->particleEmitterRight->data = this->particleEmitterLeft->data;
         ParticleSystem::Instance()->AddEmitter(this->particleEmitterLeft);
         ParticleSystem::Instance()->AddEmitter(this->particleEmitterRight);
-        // Collider
-        this->collider = Physics::CreateCollider(Physics::LoadColliderMesh("assets/space/spaceship_physics.glb"), this->transform);
     }
 
     SpaceShip::~SpaceShip() {
@@ -141,9 +139,6 @@ namespace Game
         this->particleEmitterRight->data.endSpeed = 0.0f + (3.0f * t);
         //this->particleEmitter->data.decayTime = 0.16f;//+ (0.01f  * t);
         //this->particleEmitter->data.randomTimeOffsetDist = 0.06f;/// +(0.01f * t);
-
-        // Update collider transform
-        Physics::SetTransform(collider, transform);
     }
 
     bool SpaceShip::CheckCollisions()
@@ -160,7 +155,7 @@ namespace Game
             // debug draw collision rays
             //Debug::DrawLine(pos, pos + dir * len, 1.0f, glm::vec4(0, 1, 0, 1), glm::vec4(0, 1, 0, 1), Debug::RenderMode::AlwaysOnTop);
 
-            if (payload.hit && payload.collider != this->collider)
+            if (payload.hit)
             {
                 Debug::DrawDebugText("HIT", payload.hitPoint, glm::vec4(1, 1, 1, 1));
                 Teleport();

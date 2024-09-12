@@ -15,34 +15,6 @@ using namespace Render;
 
 namespace Game
 {
-    SpaceShip::SpaceShip()
-    {
-        /*uint32_t numParticles = 2048;
-        this->particleEmitterLeft = new ParticleEmitter(numParticles);
-        this->particleEmitterLeft->data = {
-            .origin = glm::vec4(this->position + (vec3(this->transform[2]) * emitterOffset),1),
-            .dir = glm::vec4(glm::vec3(-this->transform[2]), 0),
-            .startColor = glm::vec4(0.38f, 0.76f, 0.95f, 1.0f) * 2.0f,
-            .endColor = glm::vec4(0,0,0,1.0f),
-            .numParticles = numParticles,
-            .theta = glm::radians(0.0f),
-            .startSpeed = 1.2f,
-            .endSpeed = 0.0f,
-            .startScale = 0.025f,
-            .endScale = 0.0f,
-            .decayTime = 2.58f,
-            .randomTimeOffsetDist = 2.58f,
-            .looping = 1,
-            .emitterType = 1,
-            .discRadius = 0.020f
-        };
-        this->particleEmitterRight = new ParticleEmitter(numParticles);
-        this->particleEmitterRight->data = this->particleEmitterLeft->data;
-
-        ParticleSystem::Instance()->AddEmitter(this->particleEmitterLeft);
-        ParticleSystem::Instance()->AddEmitter(this->particleEmitterRight);*/
-    }
-
     void SpaceShip::Update(float dt) {
         /*Mouse* mouse = Input::GetDefaultMouse();
         Keyboard* kbd = Input::GetDefaultKeyboard();*/
@@ -90,20 +62,6 @@ namespace Game
         vec3 desiredCamPos = this->position + vec3(this->transform * vec4(0, camOffsetY, -4.0f, 0));
         this->camPos = mix(this->camPos, desiredCamPos, dt * cameraSmoothFactor);
         cam->view = lookAt(this->camPos, this->camPos + vec3(this->transform[2]), vec3(this->transform[1]));
-
-        /*const float thrusterPosOffset = 0.365f;
-        this->particleEmitterLeft->data.origin = glm::vec4(vec3(this->position + (vec3(this->transform[0]) * -thrusterPosOffset)) + (vec3(this->transform[2]) * emitterOffset), 1);
-        this->particleEmitterLeft->data.dir = glm::vec4(glm::vec3(-this->transform[2]), 0);
-        this->particleEmitterRight->data.origin = glm::vec4(vec3(this->position + (vec3(this->transform[0]) * thrusterPosOffset)) + (vec3(this->transform[2]) * emitterOffset), 1);
-        this->particleEmitterRight->data.dir = glm::vec4(glm::vec3(-this->transform[2]), 0);
-
-        float t = (currentSpeed / this->normalSpeed);
-        this->particleEmitterLeft->data.startSpeed = 1.2 + (3.0f * t);
-        this->particleEmitterLeft->data.endSpeed = 0.0f + (3.0f * t);
-        this->particleEmitterRight->data.startSpeed = 1.2 + (3.0f * t);
-        this->particleEmitterRight->data.endSpeed = 0.0f + (3.0f * t);*/
-        //this->particleEmitter->data.decayTime = 0.16f;//+ (0.01f  * t);
-        //this->particleEmitter->data.randomTimeOffsetDist = 0.06f;/// +(0.01f * t);
     }
 
     bool
@@ -121,7 +79,7 @@ namespace Game
             // debug draw collision rays
             Debug::DrawLine(pos, pos + dir * len, 1.0f, glm::vec4(0, 1, 0, 1), glm::vec4(0, 1, 0, 1), Debug::RenderMode::AlwaysOnTop);
 
-            if (payload.hit && payload.collider != this->collider)
+            if (payload.hit)
             {
                 Debug::DrawDebugText("HIT", payload.hitPoint, glm::vec4(1, 1, 1, 1));
                 Teleport();

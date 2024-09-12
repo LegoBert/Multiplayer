@@ -93,7 +93,6 @@ namespace Game
 
         uint32_t uuid;
 
-        Physics::ColliderId collider;
         Render::ParticleEmitter* particleEmitterLeft;
         Render::ParticleEmitter* particleEmitterRight;
         float emitterOffset = -0.5f;
