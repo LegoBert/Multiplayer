@@ -45,9 +45,6 @@ private:
 	std::vector<ENetPeer*> peers = {};
 	std::vector<SpaceShip> spaceShips = {};
 	std::vector<Laser> lasers = {};
-
-	/*std::vector<Protocol::Player> protoPlayers = {};
-	const std::vector<Protocol::Laser>* protoLasers = {};*/
 };
 
 static unsigned int uuid = 0;

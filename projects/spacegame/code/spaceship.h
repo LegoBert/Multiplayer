@@ -69,7 +69,7 @@ namespace Game
     struct SpaceShip
     {
         SpaceShip();
-        SpaceShip(int32_t uuid , glm::vec3 pos, glm::vec3 vel, glm::vec3 acc, glm::quat rot);
+        SpaceShip(int32_t uuid , glm::vec3 pos, glm::vec3 vel, glm::vec3 acc, glm::quat ori);
 
         glm::vec3 position = glm::vec3(0);
         glm::quat orientation = glm::identity<glm::quat>();

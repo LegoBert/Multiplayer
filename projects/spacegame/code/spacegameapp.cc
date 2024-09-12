@@ -272,6 +272,7 @@ namespace Game
                 if(SpaceGameApp::playerID == ship.uuid)
                     ship.Update(dt);
                 RenderDevice::Draw(shipModel, ship.transform);
+                //printf("ship id: %u pos: %f %f %f \n", ship.uuid, ship.position.x, ship.position.y, ship.position.z);
                 ship.CheckCollisions();
             }
 
@@ -460,16 +461,14 @@ namespace Game
                     auto lasers = packet->lasers();
                     for (auto p : *players) {
                         const auto position = p->position();
-                        printf("ship id: %u\n", p->uuid());
+                        const auto orientation = p->direction();
                         SpaceGameApp::spaceShips.push_back(SpaceShip(
                             p->uuid(),
                             glm::vec3(position.x(), position.y(), position.z()),
                             glm::vec3(0),
                             glm::vec3(0),
-                            glm::quat()
+                            glm::quat(orientation.x(), orientation.y(), orientation.z(), orientation.w())
                         ));
-                        /*glm::vec3 pos = glm::vec3(position.x(), position.y(), position.z());
-                        printf("Position: (%f, %f, %f)\n", pos.x, pos.y, pos.z);*/
                     }
                 }
                 break;
@@ -480,14 +479,15 @@ namespace Game
                 if (packet)
                 {
                     printf("Spawn ship with id: %u\n", packet->player()->uuid());
-                    //const auto position = packet->player()->position();
-                    /*SpaceGameApp::spaceShips.push_back(SpaceShip(
+                    const auto position = packet->player()->position();
+                    const auto orientation = packet->player()->direction();
+                    SpaceGameApp::spaceShips.push_back(SpaceShip(
                         packet->player()->uuid(),
                         glm::vec3(position.x(), position.y(), position.z()),
                         glm::vec3(0),
                         glm::vec3(0),
-                        glm::quat()
-                    ));*/
+                        glm::quat(orientation.w(), orientation.x(), orientation.y(), orientation.z())
+                    ));
                 }
                 break;
             }

@@ -232,7 +232,6 @@ namespace Game
                                 break;
                             }
                         }
-                        //printf("spaceShips: %u\n", SpaceGameApp::spaceShips.size());
                         for (int i = 0; i < SpaceGameApp::spaceShips.size(); i++) {
                             if (event.peer == SpaceGameApp::spaceShips[i].peer) {
                                 SendDespawnPlayerS2C(SpaceGameApp::spaceShips[i].id, SpaceGameApp::peers);
@@ -347,8 +346,9 @@ namespace Game
             Protocol::Vec3(ship.position[0], ship.position[1], ship.position[2]),                           // Initial position (x, y, z)
             Protocol::Vec3(0, 0, 0),                                                                        // Initial velocity (x, y, z)
             Protocol::Vec3(0, 0, 0),                                                                        // Initial acceleration (x, y, z)
-            Protocol::Vec4(ship.orientation.x, ship.orientation.y, ship.orientation.z, ship.orientation.w)  // Initial rotation (quaternion x, y, z, w)
+            Protocol::Vec4(ship.orientation.w, ship.orientation.x, ship.orientation.y, ship.orientation.z)  // Initial rotation (quaternion x, y, z, w)
         );
+        //printf("Orientation :) (%f, %f, %f, %f)\n", ship.orientation.w, ship.orientation.x, ship.orientation.y, ship.orientation.z);
         SpaceGameApp::spaceShips.push_back(ship);
 
         // Send a message to all connected peers, informing them of the new player's spawn+
