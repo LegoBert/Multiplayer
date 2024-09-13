@@ -31,22 +31,14 @@ public:
 private:
 	/// show some ui things
 	void RenderUI();
-	void ProcessReceivedPacket(const void* data, size_t dataLength);
+	void ProcessReceivedPacket(const void* data, size_t dataLength , ENetPeer* sender);
 	void SpawnSpaceShip(uint32_t uuid, ENetPeer* peer);
 
 	void SendClientConnectS2C(uint16_t uuid, ENetPeer* peer);
 	void SendGameStateS2C(std::vector<SpaceShip>& spaceShips, std::vector<Laser>& lasers, ENetPeer* peer);
 	void SendSpawnPlayerS2C(Protocol::Player* player, std::vector<ENetPeer*> peers);
 	void SendDespawnPlayerS2C(uint32_t uuid, std::vector<ENetPeer*> peers);
-
-	void RemoveShip(int id) {
-		for (int i = 0; i < spaceShips.size(); i++) {
-			if (spaceShips[i].uuid = id) {
-				SpaceGameApp::spaceShips.erase(SpaceGameApp::spaceShips.begin() + i);
-				return;
-			}
-		}
-	};
+	void SendUpdatePlayerS2C(const Protocol::Player* player, uint64_t time, std::vector<ENetPeer*> peers);
 
 	Display::Window* window;
 

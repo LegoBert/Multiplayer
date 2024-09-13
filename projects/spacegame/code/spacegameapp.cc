@@ -548,15 +548,6 @@ namespace Game
                         Render::ParticleSystem::Instance()->RemoveEmitter(it->particleEmitterRight);
                         spaceShips.erase(it);
                     }
-
-                    /*for (int i = 0; i < SpaceGameApp::spaceShips.size(); i++) {
-                        if (packet->uuid() == SpaceGameApp::spaceShips[i].uuid) {
-                            Render::ParticleSystem::Instance()->RemoveEmitter(SpaceGameApp::spaceShips[i].particleEmitterRight);
-                            Render::ParticleSystem::Instance()->RemoveEmitter(SpaceGameApp::spaceShips[i].particleEmitterLeft);
-                            SpaceGameApp::spaceShips.erase(SpaceGameApp::spaceShips.begin() + i);
-                            break;
-                        }
-                    }*/
                 }
                 break;
             }

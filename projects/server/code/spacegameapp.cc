@@ -219,12 +219,13 @@ namespace Game
                         SendGameStateS2C(SpaceGameApp::spaceShips, SpaceGameApp::lasers, event.peer);
                         break;
                     case ENET_EVENT_TYPE_RECEIVE:
-                        ProcessReceivedPacket(event.packet->data, event.packet->dataLength);
+                        ProcessReceivedPacket(event.packet->data, event.packet->dataLength, event.peer);
                         break;
                     case ENET_EVENT_TYPE_DISCONNECT:
                         printf("%x:%u disconnected.\n",
                             event.peer->address.host,
                             event.peer->address.port);
+
                         ENetPeer* peerToDespawn = event.peer;
                         for (int i = 0; i < SpaceGameApp::peers.size(); i++) {
                             if (event.peer == SpaceGameApp::peers[i]) {
@@ -232,20 +233,7 @@ namespace Game
                                 break;
                             }
                         }
-                        //SpaceGameApp::spaceShips.erase(SpaceGameApp::spaceShips.begin() + 1);
-                        //SpaceGameApp::spaceShips.pop_back();
-                        //for (int i = 0; i < SpaceGameApp::spaceShips.size(); i++) {
-                        //    if (event.peer == SpaceGameApp::spaceShips[i].peer) {
-                        //        cout << SpaceGameApp::spaceShips[i].uuid << " is the ship that should get removed." << endl;
-                        //        // Send the despawn message
-                        //        SendDespawnPlayerS2C(SpaceGameApp::spaceShips[i].uuid, SpaceGameApp::peers);
-                        //        // Swap the target ship with the last ship
-                        //        std::swap(SpaceGameApp::spaceShips[i], SpaceGameApp::spaceShips.back());
-                        //        // Remove the last ship (the one we just swapped)
-                        //        SpaceGameApp::spaceShips.pop_back();
-                        //        break; // Exit after removing the ship
-                        //    }
-                        //}
+
                         auto it = std::find_if(spaceShips.begin(), spaceShips.end(), [peerToDespawn](const SpaceShip& player) {
                             return player.peer == peerToDespawn;
                         });
@@ -266,6 +254,12 @@ namespace Game
             glCullFace(GL_BACK);
 
             this->window->Update();
+
+            for (SpaceShip& ship : spaceShips) {
+                ship.Update(dt);
+                ship.CheckCollisions();
+                SendUpdatePlayerS2C(&ship.player, duration_cast<chrono::milliseconds>(chrono::system_clock::now().time_since_epoch()).count(), peers);
+            }
             
             /*if (kbd->pressed[Input::Key::Code::End])
             {
@@ -413,7 +407,7 @@ namespace Game
     }
 
     //<ENet functions>
-    void SpaceGameApp::ProcessReceivedPacket(const void* data, size_t dataLength)
+    void SpaceGameApp::ProcessReceivedPacket(const void* data, size_t dataLength, ENetPeer* sender)
     {
         // Ensure the data length is valid
         if (dataLength < sizeof(uint16_t)) {
@@ -433,7 +427,11 @@ namespace Game
                 const auto inputPacket = packetWrapper->packet_as_InputC2S();
                 if (inputPacket)
                 {
-                    //ship->bitmap = inputPacket->bitmap();
+                    for (auto& ship : spaceShips) {
+                        if (ship.peer == sender) {
+                            ship.bitmap = inputPacket->bitmap();
+                        }
+                    }
                 }
                 break;
             }
@@ -500,7 +498,7 @@ namespace Game
             enet_peer_send(peer, 0, packet);
     }
 
-    void SendUpdatePlayerS2C(const Protocol::Player* player, uint64_t time, vector<ENetPeer*> peers) {
+    void SpaceGameApp::SendUpdatePlayerS2C(const Protocol::Player* player, uint64_t time, vector<ENetPeer*> peers) {
         flatbuffers::FlatBufferBuilder builder;
         auto telPacket = Protocol::CreateUpdatePlayerS2C(builder, time, player);
         auto packetWrapper = Protocol::CreatePacketWrapper(builder, Protocol::PacketType_UpdatePlayerS2C, telPacket.Union());
