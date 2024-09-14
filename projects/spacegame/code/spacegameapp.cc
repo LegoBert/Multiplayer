@@ -250,10 +250,12 @@ namespace Game
             }
 
             // Update and draw all lasers
-            for (Laser& laser : SpaceGameApp::lasers)
-            {
-                laser.Update(dt);
-                RenderDevice::Draw(laserModel, laser.transform);
+            for (int i = 0; i < SpaceGameApp::lasers.size(); i++) {
+                SpaceGameApp::lasers[i].Update(dt);
+                if(SpaceGameApp::lasers[i].marked_for_deletion)
+                    lasers.erase(lasers.begin() + i);
+                else
+                    RenderDevice::Draw(laserModel, SpaceGameApp::lasers[i].transform);
             }
 
             // Update and draw all ships
@@ -621,7 +623,7 @@ namespace Game
                 {
                     const auto& id = packet->uuid();
                     for (int i = 0; i < SpaceGameApp::lasers.size(); i++) {
-                        if (SpaceGameApp::lasers[i].uuid = id)
+                        if (SpaceGameApp::lasers[i].uuid == id)
                             SpaceGameApp::lasers.erase(SpaceGameApp::lasers.begin() + i);
                     }
                 }
