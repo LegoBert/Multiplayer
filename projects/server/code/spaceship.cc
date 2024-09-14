@@ -20,10 +20,9 @@ namespace Game
         Keyboard* kbd = Input::GetDefaultKeyboard();*/
 
         Camera* cam = CameraManager::GetCamera(CAMERA_MAIN);
-        printf("Received InputC2S packet:  bitmap = %u\n", bitmap);
+        //printf("Received InputC2S packet:  bitmap = %u\n", bitmap);
         if (bitmap & (1 << 0))  // 'W' is bit 0
         {
-            printf("W");
             if (bitmap & (1 << 8))  // 'Shift' is bit 8
                 this->currentSpeed = mix(this->currentSpeed, this->boostSpeed, std::min(1.0f, dt * 30.0f));
             else
@@ -38,6 +37,8 @@ namespace Game
         desiredVelocity = this->transform * vec4(desiredVelocity, 0.0f);
 
         this->linearVelocity = mix(this->linearVelocity, desiredVelocity, dt * accelerationFactor);
+
+        vec3 acceleration = (desiredVelocity - this->linearVelocity) * accelerationFactor;
 
         // Rotation calculations using bitmap
         float rotX = (bitmap & (1 << 5)) ? 1.0f : (bitmap & (1 << 6)) ? -1.0f : 0.0f;  // Left and Right
@@ -58,15 +59,21 @@ namespace Game
         this->transform = T * (mat4)quat(vec3(0, 0, rotationZ));
         this->rotationZ = mix(this->rotationZ, 0.0f, dt * cameraSmoothFactor);
 
+        this->player = Protocol::Player(
+            this->uuid,                                                                                         // Unique player ID
+            Protocol::Vec3(this->position[0], this->position[1], this->position[2]),                            // Initial position (x, y, z)
+            Protocol::Vec3(this->linearVelocity[0], this->linearVelocity[1], this->linearVelocity[2]),          // Initial velocity (x, y, z)
+            Protocol::Vec3(acceleration[0], acceleration[1], acceleration[2]),                                     // Initial acceleration (x, y, z)
+            Protocol::Vec4(this->orientation.x, this->orientation.y, this->orientation.z, this->orientation.w)  // Initial rotation (quaternion x, y, z, w)
+        );
+
         // Update camera view transform
         vec3 desiredCamPos = this->position + vec3(this->transform * vec4(0, camOffsetY, -4.0f, 0));
         this->camPos = mix(this->camPos, desiredCamPos, dt * cameraSmoothFactor);
         cam->view = lookAt(this->camPos, this->camPos + vec3(this->transform[2]), vec3(this->transform[1]));
     }
 
-    bool
-        SpaceShip::CheckCollisions()
-    {
+    bool SpaceShip::CheckCollisions() {
         glm::mat4 rotation = (glm::mat4)orientation;
         bool hit = false;
         for (int i = 0; i < 8; i++)
@@ -102,6 +109,13 @@ namespace Game
         glm::vec3 directionToCenter = glm::normalize(glm::vec3(0.0f, 0.0f, 0.0f) - position);
         glm::quat newOrientation = glm::quatLookAt(-directionToCenter, glm::vec3(0.0f, -1.0f, 0.0f));
         orientation = newOrientation;
+        this->player = this->player = Protocol::Player(
+            this->uuid,                                                                                         // Unique player ID
+            Protocol::Vec3(this->position[0], this->position[1], this->position[2]),                            // position (x, y, z)
+            Protocol::Vec3(0, 0, 0),                                                                            // velocity (x, y, z)
+            Protocol::Vec3(0, 0, 0),                                                                            // acceleration (x, y, z)
+            Protocol::Vec4(this->orientation.x, this->orientation.y, this->orientation.z, this->orientation.w)  // rotation (quaternion x, y, z, w)
+        );
     }
 
     glm::vec3 SpaceShip::SpawnInRandomPosition(float radius) {

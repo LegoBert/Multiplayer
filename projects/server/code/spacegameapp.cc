@@ -98,7 +98,7 @@ namespace Game
         std::vector<std::tuple<ModelId, Physics::ColliderId, glm::mat4>> asteroids;
 
         // Setup asteroids near
-        /*for (int i = 0; i < 100; i++)
+        for (int i = 0; i < 100; i++)
         {
             std::tuple<ModelId, Physics::ColliderId, glm::mat4> asteroid;
             size_t resourceIndex = (size_t)(Core::FastRandom() % 6);
@@ -115,10 +115,10 @@ namespace Game
             std::get<1>(asteroid) = Physics::CreateCollider(colliderMeshes[resourceIndex], transform);
             std::get<2>(asteroid) = transform;
             asteroids.push_back(asteroid);
-        }*/
+        }
 
         // Setup asteroids far
-        /*for (int i = 0; i < 50; i++)
+        for (int i = 0; i < 50; i++)
         {
             std::tuple<ModelId, Physics::ColliderId, glm::mat4> asteroid;
             size_t resourceIndex = (size_t)(Core::FastRandom() % 6);
@@ -135,7 +135,7 @@ namespace Game
             std::get<1>(asteroid) = Physics::CreateCollider(colliderMeshes[resourceIndex], transform);
             std::get<2>(asteroid) = transform;
             asteroids.push_back(asteroid);
-        }*/
+        }
 
         // Setup skybox
         /*std::vector<const char*> skybox
@@ -257,37 +257,30 @@ namespace Game
 
             for (SpaceShip& ship : spaceShips) {
                 ship.Update(dt);
-                ship.CheckCollisions();
+                //Shot
+                if (ship.bitmap & (1 << 7))
+                {
+                    Laser laser = Laser(uuid, duration_cast<chrono::milliseconds>(chrono::system_clock::now().time_since_epoch()).count(), 1000, ship.position, ship.orientation);
+                    SpaceGameApp::lasers.push_back(laser);
+                    Protocol::Laser pl = Protocol::Laser(laser.uuid, laser.start_time, laser.end_time, Protocol::Vec3(laser.position.x, laser.position.y, laser.position.z), Protocol::Vec4(laser.direction.x, laser.direction.y, laser.direction.z, laser.direction.w));
+                    SendSpawnLaserS2C(&pl, peers);
+                    uuid++;
+                }
                 SendUpdatePlayerS2C(&ship.player, duration_cast<chrono::milliseconds>(chrono::system_clock::now().time_since_epoch()).count(), peers);
+                if (ship.CheckCollisions()) {
+                    SendTeleportPlayerS2C(&ship.player, duration_cast<chrono::milliseconds>(chrono::system_clock::now().time_since_epoch()).count(), peers);
+                }
             }
-            
-            /*if (kbd->pressed[Input::Key::Code::End])
-            {
-                ShaderResource::ReloadShaders();
-            }*/
 
-            //ship.Update(dt);
-            //ship.CheckCollisions();
-
-            // Store all drawcalls in the render device
-            /*for (auto const& asteroid : asteroids)
-            {
-                RenderDevice::Draw(std::get<0>(asteroid), std::get<2>(asteroid));
-            }*/
-
-            // Update and draw all lasers
-            //for (Laser* laser : Lasers)
-            //{
-            //    laser->Update(dt);
-            //    if (laser->marked_for_deletion)
-            //        delete laser;
-            //    /*else
-            //        RenderDevice::Draw(laserModel, laser->transform);*/
-            //}
-            //Lasers.erase(std::remove_if(Lasers.begin(), Lasers.end(), [](Laser* laser) { return laser->marked_for_deletion; }), Lasers.end());
-
-            //Physics::SetTransform(ship.collider, ship.transform);
-            //RenderDevice::Draw(ship.model, ship.transform);
+            // Lasers
+            for (int i = 0; i < lasers.size(); i++) {
+                lasers[i].Update(dt);
+                lasers[i].CheckCollisions();    // Should take in a list with ships also - kit
+                if (lasers[i].marked_for_deletion) {
+                    SendDespawnLaserS2C(lasers[i].uuid, peers);
+                    lasers.erase(lasers.begin() + i);
+                }
+            }
 
             // Execute the entire rendering pipeline
             RenderDevice::Render(this->window, dt);
@@ -298,7 +291,6 @@ namespace Game
             auto timeEnd = std::chrono::steady_clock::now();
             dt = std::min(0.04, std::chrono::duration<double>(timeEnd - timeStart).count());
             
-
             if (kbd->pressed[Input::Key::Code::Escape]) {
                 enet_host_destroy(server);
                 this->Exit();
@@ -509,7 +501,7 @@ namespace Game
             enet_peer_send(peer, 0, packet);
     }
 
-    void SendTeleportPlayerS2C(const Protocol::Player* player, uint64_t time, vector<ENetPeer*> peers) {
+    void SpaceGameApp::SendTeleportPlayerS2C(const Protocol::Player* player, uint64_t time, vector<ENetPeer*> peers) {
         flatbuffers::FlatBufferBuilder builder;
         auto telPacket = Protocol::CreateTeleportPlayerS2C(builder, time, player);
         auto packetWrapper = Protocol::CreatePacketWrapper(builder, Protocol::PacketType_TeleportPlayerS2C, telPacket.Union());
@@ -520,7 +512,7 @@ namespace Game
             enet_peer_send(peer, 0, packet);
     }
 
-    void SendSpawnLaserS2C(const Protocol::Laser* laser, vector<ENetPeer*> peers) {
+    void SpaceGameApp::SendSpawnLaserS2C(const Protocol::Laser* laser, vector<ENetPeer*> peers) {
         flatbuffers::FlatBufferBuilder builder;
         auto telPacket = Protocol::CreateSpawnLaserS2C(builder, laser);
         auto packetWrapper = Protocol::CreatePacketWrapper(builder, Protocol::PacketType_SpawnLaserS2C, telPacket.Union());
@@ -531,7 +523,7 @@ namespace Game
             enet_peer_send(peer, 0, packet);
     }
 
-    void SendDespawnLaserS2C(uint32_t uuid, vector<ENetPeer*> peers) {
+    void SpaceGameApp::SendDespawnLaserS2C(uint32_t uuid, vector<ENetPeer*> peers) {
         flatbuffers::FlatBufferBuilder builder;
         auto telPacket = Protocol::CreateDespawnLaserS2C(builder, uuid);
         auto packetWrapper = Protocol::CreatePacketWrapper(builder, Protocol::PacketType_DespawnLaserS2C, telPacket.Union());

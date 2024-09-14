@@ -106,18 +106,18 @@ namespace Game
         float rotY = kbd->held[Key::Up] ? -1.0f : kbd->held[Key::Down] ? 1.0f : 0.0f;
         float rotZ = kbd->held[Key::A] ? -1.0f : kbd->held[Key::D] ? 1.0f : 0.0f;
 
-        this->position += this->linearVelocity * dt * 10.0f;
+        //this->position += this->linearVelocity * dt * 10.0f;
 
         const float rotationSpeed = 1.8f * dt;
         rotXSmooth = mix(rotXSmooth, rotX * rotationSpeed, dt * cameraSmoothFactor);
         rotYSmooth = mix(rotYSmooth, rotY * rotationSpeed, dt * cameraSmoothFactor);
         rotZSmooth = mix(rotZSmooth, rotZ * rotationSpeed, dt * cameraSmoothFactor);
         quat localOrientation = quat(vec3(-rotYSmooth, rotXSmooth, rotZSmooth));
-        this->orientation = this->orientation * localOrientation;
-        this->rotationZ -= rotXSmooth;
-        this->rotationZ = clamp(this->rotationZ, -45.0f, 45.0f);
+        //this->orientation = this->orientation * localOrientation;
+        //this->rotationZ -= rotXSmooth;
+        //this->rotationZ = clamp(this->rotationZ, -45.0f, 45.0f);
         mat4 T = translate(this->position) * (mat4)this->orientation;
-        this->transform = T * (mat4)quat(vec3(0, 0, rotationZ));
+        //this->transform = T * (mat4)quat(vec3(0, 0, rotationZ));
         this->rotationZ = mix(this->rotationZ, 0.0f, dt * cameraSmoothFactor);
 
         // update camera view transform
@@ -157,7 +157,7 @@ namespace Game
             if (payload.hit)
             {
                 Debug::DrawDebugText("HIT", payload.hitPoint, glm::vec4(1, 1, 1, 1));
-                Teleport();
+                //Teleport();
                 hit = true;
             }
         }

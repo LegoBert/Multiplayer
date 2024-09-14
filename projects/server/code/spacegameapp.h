@@ -39,6 +39,9 @@ private:
 	void SendSpawnPlayerS2C(Protocol::Player* player, std::vector<ENetPeer*> peers);
 	void SendDespawnPlayerS2C(uint32_t uuid, std::vector<ENetPeer*> peers);
 	void SendUpdatePlayerS2C(const Protocol::Player* player, uint64_t time, std::vector<ENetPeer*> peers);
+	void SendTeleportPlayerS2C(const Protocol::Player* player, uint64_t time, std::vector<ENetPeer*> peers);
+	void SendSpawnLaserS2C(const Protocol::Laser* laser, std::vector<ENetPeer*> peers);
+	void SendDespawnLaserS2C(uint32_t uuid, std::vector<ENetPeer*> peers);
 
 	Display::Window* window;
 

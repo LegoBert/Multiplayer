@@ -239,16 +239,6 @@ namespace Game
             {
                 SendInputToServer(kbd, duration_cast<chrono::milliseconds>(chrono::system_clock::now().time_since_epoch()).count());
             }
-            
-            ////Shoot laser
-            //uint64_t start_time = std::chrono::duration_cast<std::chrono::milliseconds>(std::chrono::system_clock::now().time_since_epoch()).count();
-            //if (kbd->pressed[Input::Key::Code::Space])
-            //{
-            //    Lasers.push_back(new Laser(ship.transform, start_time));
-            //}
-
-            /*ship.Update(dt);
-            ship.CheckCollisions();*/
 
             // Draw some debug text
             Debug::DrawDebugText("Center", glm::vec3(0), { 1,0,0,1 });
@@ -262,7 +252,7 @@ namespace Game
             // Update and draw all lasers
             for (Laser& laser : SpaceGameApp::lasers)
             {
-                //Update here
+                laser.Update(dt);
                 RenderDevice::Draw(laserModel, laser.transform);
             }
 
@@ -273,7 +263,6 @@ namespace Game
                 if(SpaceGameApp::playerID == ship.uuid)
                     ship.Update(dt);
                 RenderDevice::Draw(shipModel, ship.transform);
-                //printf("ship id: %u pos: %f %f %f \n", ship.uuid, ship.position.x, ship.position.y, ship.position.z);
                 ship.CheckCollisions();
             }
 
@@ -547,6 +536,93 @@ namespace Game
                         Render::ParticleSystem::Instance()->RemoveEmitter(it->particleEmitterLeft);
                         Render::ParticleSystem::Instance()->RemoveEmitter(it->particleEmitterRight);
                         spaceShips.erase(it);
+                    }
+                }
+                break;
+            }
+            case Protocol::PacketType_UpdatePlayerS2C:
+            {
+                const auto packet = packetWrapper->packet_as_UpdatePlayerS2C();
+                if (packet)
+                {
+                    /*packet->player()->uuid();
+                    packet->player()->position();
+                    packet->player()->direction();
+                    packet->player()->velocity();
+                    packet->player()->acceleration();
+                    printf("Player UUID: %u\n", packet->player()->uuid());*/
+
+                    const auto& position = packet->player()->position();
+                    //printf("Player Position: x: %f, y: %f, z: %f\n", position.x(), position.y(), position.z());
+
+                    const auto& direction = packet->player()->direction();
+                    //printf("Player Direction: x: %f, y: %f, z: %f\n", direction.x(), direction.y(), direction.z());
+
+                    const auto& velocity = packet->player()->velocity();
+                    //printf("Player Velocity: x: %f, y: %f, z: %f\n", velocity.x(), velocity.y(), velocity.z());
+
+                    const auto& acceleration = packet->player()->acceleration();
+                    //printf("Player Acceleration: x: %f, y: %f, z: %f\n", acceleration.x(), acceleration.y(), acceleration.z());
+                    for (auto& ship : spaceShips) {
+                        if (ship.uuid == packet->player()->uuid()) {
+                            ship.position = glm::vec3(position.x(), position.y(), position.z());
+                            ship.orientation = glm::quat(direction.w(), direction.x(), direction.y(), direction.z());
+                            ship.transform = translate(ship.position) * (glm::mat4)ship.orientation;
+                        }
+                    }
+                    
+                }
+                break;
+            }
+            case Protocol::PacketType_TeleportPlayerS2C:
+            {
+                const auto packet = packetWrapper->packet_as_TeleportPlayerS2C();
+                if (packet)
+                {
+                    const auto& position = packet->player()->position();
+                    const auto& direction = packet->player()->direction();
+                    const auto& velocity = packet->player()->velocity();
+                    const auto& acceleration = packet->player()->acceleration();
+                    for (auto& ship : spaceShips) {
+                        if (ship.uuid == packet->player()->uuid()) {
+                            ship.position = glm::vec3(position.x(), position.y(), position.z());
+                            ship.orientation = glm::quat(direction.w(), direction.x(), direction.y(), direction.z());
+                            ship.transform = translate(ship.position) * (glm::mat4)ship.orientation;
+                        }
+                    }
+
+                }
+                break;
+            }
+            case Protocol::PacketType_SpawnLaserS2C:
+            {
+                const auto packet = packetWrapper->packet_as_SpawnLaserS2C();
+                if (packet)
+                {
+                    const auto& id = packet->laser()->uuid();
+                    const auto& position = packet->laser()->origin();
+                    const auto& direction = packet->laser()->direction();
+                    const auto& startTime = packet->laser()->start_time();
+                    const auto& endTime = packet->laser()->end_time();
+                    SpaceGameApp::lasers.push_back(Laser(
+                        id,
+                        startTime,
+                        endTime,
+                        glm::vec3(position.x(), position.y(), position.z()),
+                        glm::quat(direction.w(), direction.x(), direction.y(), direction.z())
+                    ));
+                }
+                break;
+            }
+            case Protocol::PacketType_DespawnLaserS2C:
+            {
+                const auto packet = packetWrapper->packet_as_DespawnLaserS2C();
+                if (packet)
+                {
+                    const auto& id = packet->uuid();
+                    for (int i = 0; i < SpaceGameApp::lasers.size(); i++) {
+                        if (SpaceGameApp::lasers[i].uuid = id)
+                            SpaceGameApp::lasers.erase(SpaceGameApp::lasers.begin() + i);
                     }
                 }
                 break;
