@@ -93,38 +93,44 @@ namespace Game
                 return true;
             }
         }
-        // Check Laser collision
-        /*for (const Laser& laser : lasers) {
+        for (const Laser& laser : lasers) {
             // Convert quaternion to direction vector
-            glm::quat laserRotation = laser.direction; // Assuming laser.direction is a quaternion
-            glm::vec3 forward = glm::vec3(0.0f, 0.0f, -1.0f);
-            glm::vec3 laserDirection = glm::normalize(laserRotation * forward); // Get the laser direction
+            glm::vec3 laserRotation = laser.direction * glm::vec3(0, 0, 1);
+            glm::vec3 p1 = laser.position - laserRotation * 0.5f;
+            glm::vec3 p2 = laser.position + laserRotation * 0.5f;
 
-            glm::vec3 laserAxis = glm::normalize(laserDirection);
-            float laserLength = glm::length(laserDirection); // Adjust if you need the length differently
+            // Sphere data
+            glm::vec3 sphereCenter = this->position;
+            float sphereRadius = this->radius;
 
-            // Instead of using laser.startPosition, use laser.position
-            glm::vec3 shipToStart = this->position - laser.position;
-            float projectionLength = glm::dot(shipToStart, laserAxis);
+            // Vector from p1 to p2 (laser direction vector)
+            glm::vec3 d = p2 - p1;
 
-            // Check if the projection is within the laser segment
-            if (projectionLength < 0.0f || projectionLength > laserLength) {
-                // The ship is not within the length of the laser
-                continue;
+            // Vector from p1 to the sphere center
+            glm::vec3 f = p1 - sphereCenter;
+
+            // Coefficients of the quadratic equation
+            float a = glm::dot(d, d);
+            float b = 2.0f * glm::dot(f, d);
+            float c = glm::dot(f, f) - sphereRadius * sphereRadius;
+
+            // Discriminant of the quadratic equation
+            float discriminant = b * b - 4 * a * c;
+
+            if (discriminant >= 0) {
+                // There is an intersection if discriminant is non-negative
+                float t1 = (-b - sqrt(discriminant)) / (2 * a);
+                float t2 = (-b + sqrt(discriminant)) / (2 * a);
+
+                // Check if intersection occurs within the segment [0, 1]
+                if ((t1 >= 0.0f && t1 <= 1.0f) || (t2 >= 0.0f && t2 <= 1.0f)) {
+                    // Laser intersects the sphere
+                    Teleport();
+                    return true;
+                    std::cout << "Laser hit the sphere!" << std::endl;
+                }
             }
-
-            // Find the closest point on the laser to the ship
-            glm::vec3 closestPoint = laser.position + projectionLength * laserAxis;
-
-            // Calculate the distance from the ship to this closest point
-            float distance = glm::distance(this->position, closestPoint);
-
-            // Check for collision
-            if (distance < this->radius + laser.radius) { // Assuming the laser has a radius
-                // Handle collision
-                return true;
-            }
-        }*/
+        }
         // Check Ship collision
         for (auto& ship : ships) {
             // Check if the ship is not the current ship

@@ -264,8 +264,8 @@ namespace Game
                 {
                     // Define the wing positions (right and left) using the ship's collider end points
                     glm::vec3 wingPositions[2] = {
-                        ship.position + (ship.orientation * ship.colliderEndPoints[5]), // Right wing
-                        ship.position + (ship.orientation * ship.colliderEndPoints[4])  // Left wing
+                        ship.position + (ship.orientation * (ship.colliderEndPoints[5] + glm::vec3(0,0,1))), // Right wing
+                        ship.position + (ship.orientation * (ship.colliderEndPoints[4] + glm::vec3(0,0,1)))  // Left wing
                     };
 
                     // Iterate through both wing positions (right and left)
