@@ -252,8 +252,15 @@ namespace Game
             // Update and draw all lasers
             for (int i = 0; i < SpaceGameApp::lasers.size(); i++) {
                 SpaceGameApp::lasers[i].Update(dt);
-                if(SpaceGameApp::lasers[i].marked_for_deletion)
+                if (SpaceGameApp::lasers[i].marked_for_deletion)
+                {
+                    /*printf("Server Laser marked for deletion: UUID: %u Position: (%f, %f, %f)\n",
+                        lasers[i].uuid,
+                        lasers[i].position.x,
+                        lasers[i].position.y,
+                        lasers[i].position.z);*/
                     lasers.erase(lasers.begin() + i);
+                }
                 else
                     RenderDevice::Draw(laserModel, SpaceGameApp::lasers[i].transform);
             }

@@ -27,7 +27,7 @@ namespace Game
         glm::quat direction;	// The quaternion direction of the laser.
 
         glm::mat4 transform = glm::mat4(1);
-        float Speed = 5.0f;
+        float Speed = 10.0f;
         bool marked_for_deletion = false;
 
         /*void Update(float dt)

@@ -29,7 +29,7 @@ namespace Game
         glm::quat direction;	// The quaternion direction of the laser.
 
         glm::mat4 transform = glm::mat4(1);
-        float Speed = 5.0f;
+        float Speed = 10.0f;
         bool marked_for_deletion = false;
 
         /*void Update(float dt)
@@ -128,6 +128,9 @@ namespace Game
         float rotXSmooth = 0;
         float rotYSmooth = 0;
         float rotZSmooth = 0;
+
+        uint64_t lastFireTime = 0;  // Stores the time of the last fired shot
+        float fireRate = 200.0f;    // Fire rate in milliseconds (e.g., 200 ms between shots)
 
         uint16_t bitmap = 0;
         uint32_t uuid;

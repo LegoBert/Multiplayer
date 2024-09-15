@@ -256,28 +256,66 @@ namespace Game
             this->window->Update();
 
             for (SpaceShip& ship : spaceShips) {
-                ship.Update(dt);
-                //Shot
-                if (ship.bitmap & (1 << 7))
+                // Get the current time in milliseconds
+                uint64_t currentTime = duration_cast<chrono::milliseconds>(chrono::system_clock::now().time_since_epoch()).count();
+
+                // Check if the ship is attempting to fire and enough time has passed since the last shot
+                if ((ship.bitmap & (1 << 7)) && (currentTime - ship.lastFireTime >= ship.fireRate))
                 {
-                    Laser laser = Laser(uuid, duration_cast<chrono::milliseconds>(chrono::system_clock::now().time_since_epoch()).count(), 1000, ship.position, ship.orientation);
-                    SpaceGameApp::lasers.push_back(laser);
-                    Protocol::Laser pl = Protocol::Laser(laser.uuid, laser.start_time, laser.end_time, Protocol::Vec3(laser.position.x, laser.position.y, laser.position.z), Protocol::Vec4(laser.direction.x, laser.direction.y, laser.direction.z, laser.direction.w));
-                    SendSpawnLaserS2C(&pl, peers);
-                    uuid++;
+                    // Define the wing positions (right and left) using the ship's collider end points
+                    glm::vec3 wingPositions[2] = {
+                        ship.position + (ship.orientation * ship.colliderEndPoints[5]), // Right wing
+                        ship.position + (ship.orientation * ship.colliderEndPoints[4])  // Left wing
+                    };
+
+                    // Iterate through both wing positions (right and left)
+                    for (int i = 0; i < 2; ++i) {
+                        glm::vec3 wingPos = wingPositions[i];
+                        Laser laser = Laser(
+                            uuid,
+                            currentTime,
+                            1000,
+                            wingPos,
+                            ship.orientation
+                        );
+                        SpaceGameApp::lasers.push_back(laser);
+
+                        // Create and send the protocol laser packet
+                        Protocol::Laser l = Protocol::Laser(
+                            laser.uuid,
+                            laser.start_time,
+                            laser.end_time,
+                            Protocol::Vec3(laser.position.x, laser.position.y, laser.position.z),
+                            Protocol::Vec4(laser.direction.x, laser.direction.y, laser.direction.z, laser.direction.w)
+                        );
+
+                        SendSpawnLaserS2C(&l, peers);
+                        uuid++;
+                    }
+
+                    // Update the last fire time
+                    ship.lastFireTime = currentTime;
                 }
-                SendUpdatePlayerS2C(&ship.player, duration_cast<chrono::milliseconds>(chrono::system_clock::now().time_since_epoch()).count(), peers);
+
+                ship.Update(dt);
+                SendUpdatePlayerS2C(&ship.player, currentTime, peers);
+
                 if (ship.CheckCollisions()) {
-                    SendTeleportPlayerS2C(&ship.player, duration_cast<chrono::milliseconds>(chrono::system_clock::now().time_since_epoch()).count(), peers);
+                    SendTeleportPlayerS2C(&ship.player, currentTime, peers);
                 }
             }
 
             // Lasers
-            for (int i = 0; i < lasers.size(); i++) {
+            for (int i = lasers.size() - 1; i >= 0; i--) {
                 lasers[i].Update(dt);
-                lasers[i].CheckCollisions();    // Should take in a list with ships also - kit
+                lasers[i].CheckCollisions();
                 if (lasers[i].marked_for_deletion) {
                     SendDespawnLaserS2C(lasers[i].uuid, peers);
+                    /*printf("Server Laser marked for deletion: UUID: %u Position: (%f, %f, %f)\n",
+                        lasers[i].uuid,
+                        lasers[i].position.x,
+                        lasers[i].position.y,
+                        lasers[i].position.z);*/
                     lasers.erase(lasers.begin() + i);
                 }
             }
