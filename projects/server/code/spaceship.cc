@@ -73,9 +73,9 @@ namespace Game
         cam->view = lookAt(this->camPos, this->camPos + vec3(this->transform[2]), vec3(this->transform[1]));
     }
 
-    bool SpaceShip::CheckCollisions() {
+    bool SpaceShip::CheckCollisions(std::vector<Laser>& lasers, std::vector<SpaceShip>& ships) {
         glm::mat4 rotation = (glm::mat4)orientation;
-        bool hit = false;
+        // Check Rock collision
         for (int i = 0; i < 8; i++)
         {
             glm::vec3 pos = position;
@@ -90,10 +90,56 @@ namespace Game
             {
                 Debug::DrawDebugText("HIT", payload.hitPoint, glm::vec4(1, 1, 1, 1));
                 Teleport();
-                hit = true;
+                return true;
             }
         }
-        return hit;
+        // Check Laser collision
+        /*for (const Laser& laser : lasers) {
+            // Convert quaternion to direction vector
+            glm::quat laserRotation = laser.direction; // Assuming laser.direction is a quaternion
+            glm::vec3 forward = glm::vec3(0.0f, 0.0f, -1.0f);
+            glm::vec3 laserDirection = glm::normalize(laserRotation * forward); // Get the laser direction
+
+            glm::vec3 laserAxis = glm::normalize(laserDirection);
+            float laserLength = glm::length(laserDirection); // Adjust if you need the length differently
+
+            // Instead of using laser.startPosition, use laser.position
+            glm::vec3 shipToStart = this->position - laser.position;
+            float projectionLength = glm::dot(shipToStart, laserAxis);
+
+            // Check if the projection is within the laser segment
+            if (projectionLength < 0.0f || projectionLength > laserLength) {
+                // The ship is not within the length of the laser
+                continue;
+            }
+
+            // Find the closest point on the laser to the ship
+            glm::vec3 closestPoint = laser.position + projectionLength * laserAxis;
+
+            // Calculate the distance from the ship to this closest point
+            float distance = glm::distance(this->position, closestPoint);
+
+            // Check for collision
+            if (distance < this->radius + laser.radius) { // Assuming the laser has a radius
+                // Handle collision
+                return true;
+            }
+        }*/
+        // Check Ship collision
+        for (auto& ship : ships) {
+            // Check if the ship is not the current ship
+            if (&ship == this) {
+                continue;
+            }
+
+            float distance = glm::distance(this->position, ship.position);
+            if (distance < (ship.radius + this->radius)) {
+                ship.Teleport();
+                Teleport();
+                return true;
+            }
+        }
+        return false;
     }
 
     void SpaceShip::Teleport()

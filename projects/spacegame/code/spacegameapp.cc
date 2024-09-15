@@ -272,7 +272,7 @@ namespace Game
                 if(SpaceGameApp::playerID == ship.uuid)
                     ship.Update(dt);
                 RenderDevice::Draw(shipModel, ship.transform);
-                ship.CheckCollisions();
+                //ship.CheckCollisions();
             }
 
             // Execute the entire rendering pipeline

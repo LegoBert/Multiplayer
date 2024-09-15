@@ -157,7 +157,7 @@ namespace Game
             if (payload.hit)
             {
                 Debug::DrawDebugText("HIT", payload.hitPoint, glm::vec4(1, 1, 1, 1));
-                //Teleport();
+                Teleport();
                 hit = true;
             }
         }

@@ -28,6 +28,8 @@ namespace Game
         glm::vec3 position;		// the position of the laser.
         glm::quat direction;	// The quaternion direction of the laser.
 
+        float radius = 0.1f;
+
         glm::mat4 transform = glm::mat4(1);
         float Speed = 10.0f;
         bool marked_for_deletion = false;
@@ -132,6 +134,8 @@ namespace Game
         uint64_t lastFireTime = 0;  // Stores the time of the last fired shot
         float fireRate = 200.0f;    // Fire rate in milliseconds (e.g., 200 ms between shots)
 
+        float radius = 0.5f;
+
         uint16_t bitmap = 0;
         uint32_t uuid;
         ENetPeer* peer;
@@ -139,7 +143,7 @@ namespace Game
 
         void Update(float dt);
 
-        bool CheckCollisions();
+        bool CheckCollisions(std::vector<Laser>& lasers, std::vector<SpaceShip>& ships);
 
         void Teleport();
 

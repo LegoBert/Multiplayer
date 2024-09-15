@@ -274,7 +274,7 @@ namespace Game
                         Laser laser = Laser(
                             uuid,
                             currentTime,
-                            1000,
+                            1000 * 10,  // 10s duration
                             wingPos,
                             ship.orientation
                         );
@@ -300,7 +300,7 @@ namespace Game
                 ship.Update(dt);
                 SendUpdatePlayerS2C(&ship.player, currentTime, peers);
 
-                if (ship.CheckCollisions()) {
+                if (ship.CheckCollisions(SpaceGameApp::lasers, SpaceGameApp::spaceShips)) {
                     SendTeleportPlayerS2C(&ship.player, currentTime, peers);
                 }
             }
