@@ -120,6 +120,17 @@ namespace Game
         glm::mat4 transform = glm::mat4(1);
         glm::vec3 linearVelocity = glm::vec3(0);
 
+        uint64_t lastUpdateTime;
+        glm::vec3 lastPosition;
+        glm::quat lastOrientation;
+        glm::vec3 lastVelocity;
+        glm::vec3 lastAcceleration;
+
+        glm::vec3 predictedPosition;
+        glm::quat predictedOrientation;
+
+        float timeSinceLastPacket = 0;
+
         const float normalSpeed = 1.0f;
         const float boostSpeed = normalSpeed * 2.0f;
         const float accelerationFactor = 1.0f;
@@ -139,7 +150,11 @@ namespace Game
         Render::ParticleEmitter* particleEmitterRight;
         float emitterOffset = -0.5f;
 
-        void Update(float dt);
+        void Update(float dt, uint32_t id);
+
+        glm::vec3 PredictPosition();
+
+        void ApplyInterpolation(float dt, float timeSinceLastPacket, const glm::vec3& predictedPosition);
 
         bool CheckCollisions();
 

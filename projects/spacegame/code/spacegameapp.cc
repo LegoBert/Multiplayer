@@ -269,10 +269,8 @@ namespace Game
             for (SpaceShip& ship : SpaceGameApp::spaceShips)
             {
                 //Update here
-                if(SpaceGameApp::playerID == ship.uuid)
-                    ship.Update(dt);
+                ship.Update(dt, SpaceGameApp::playerID);
                 RenderDevice::Draw(shipModel, ship.transform);
-                //ship.CheckCollisions();
             }
 
             // Execute the entire rendering pipeline
@@ -554,32 +552,26 @@ namespace Game
                 const auto packet = packetWrapper->packet_as_UpdatePlayerS2C();
                 if (packet)
                 {
-                    /*packet->player()->uuid();
-                    packet->player()->position();
-                    packet->player()->direction();
-                    packet->player()->velocity();
-                    packet->player()->acceleration();
-                    printf("Player UUID: %u\n", packet->player()->uuid());*/
-
+                    const auto& time = packet->time();
                     const auto& position = packet->player()->position();
-                    //printf("Player Position: x: %f, y: %f, z: %f\n", position.x(), position.y(), position.z());
-
                     const auto& direction = packet->player()->direction();
-                    //printf("Player Direction: x: %f, y: %f, z: %f\n", direction.x(), direction.y(), direction.z());
-
                     const auto& velocity = packet->player()->velocity();
-                    //printf("Player Velocity: x: %f, y: %f, z: %f\n", velocity.x(), velocity.y(), velocity.z());
-
                     const auto& acceleration = packet->player()->acceleration();
-                    //printf("Player Acceleration: x: %f, y: %f, z: %f\n", acceleration.x(), acceleration.y(), acceleration.z());
+
                     for (auto& ship : spaceShips) {
                         if (ship.uuid == packet->player()->uuid()) {
-                            ship.position = glm::vec3(position.x(), position.y(), position.z());
+                            //ship.position = glm::vec3(position.x(), position.y(), position.z());
                             ship.orientation = glm::quat(direction.w(), direction.x(), direction.y(), direction.z());
-                            ship.transform = translate(ship.position) * (glm::mat4)ship.orientation;
+                            //ship.transform = translate(ship.position) * (glm::mat4)ship.orientation;
+                            ship.lastUpdateTime = time;
+                            ship.lastPosition = glm::vec3(position.x(), position.y(), position.z());
+                            ship.lastOrientation = glm::quat(direction.w(), direction.x(), direction.y(), direction.z());
+                            ship.lastVelocity = glm::vec3(velocity.x(), velocity.y(), velocity.z());
+                            ship.lastAcceleration = glm::vec3(acceleration.x(), acceleration.y(), acceleration.z());
+                            ship.timeSinceLastPacket = 0;
+                            break;
                         }
                     }
-                    
                 }
                 break;
             }

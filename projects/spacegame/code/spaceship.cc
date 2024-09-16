@@ -79,12 +79,13 @@ namespace Game
     
     }
 
-    void SpaceShip::Update(float dt)
+    void SpaceShip::Update(float dt, uint32_t id)
     {
-        Mouse* mouse = Input::GetDefaultMouse();
+        
+        /*Mouse* mouse = Input::GetDefaultMouse();
         Keyboard* kbd = Input::GetDefaultKeyboard();
 
-        Camera* cam = CameraManager::GetCamera(CAMERA_MAIN);
+        
 
         if (kbd->held[Key::W])
         {
@@ -118,26 +119,49 @@ namespace Game
         //this->rotationZ = clamp(this->rotationZ, -45.0f, 45.0f);
         mat4 T = translate(this->position) * (mat4)this->orientation;
         //this->transform = T * (mat4)quat(vec3(0, 0, rotationZ));
-        this->rotationZ = mix(this->rotationZ, 0.0f, dt * cameraSmoothFactor);
+        this->rotationZ = mix(this->rotationZ, 0.0f, dt * cameraSmoothFactor);*/
 
-        // update camera view transform
-        vec3 desiredCamPos = this->position + vec3(this->transform * vec4(0, camOffsetY, -4.0f, 0));
-        this->camPos = mix(this->camPos, desiredCamPos, dt * cameraSmoothFactor);
-        cam->view = lookAt(this->camPos, this->camPos + vec3(this->transform[2]), vec3(this->transform[1]));
+        glm::vec3 predictedPosition = PredictPosition();
+        ApplyInterpolation(dt, timeSinceLastPacket, predictedPosition);
 
+        // Update camera view transform
+        if (id == uuid) {
+            Camera* cam = CameraManager::GetCamera(CAMERA_MAIN);
+            vec3 desiredCamPos = this->position + vec3(this->transform * vec4(0, camOffsetY, -4.0f, 0));
+            this->camPos = mix(this->camPos, desiredCamPos, dt * cameraSmoothFactor);
+            cam->view = lookAt(this->camPos, this->camPos + vec3(this->transform[2]), vec3(this->transform[1]));
+        }
+        
+        // Update thrusters
         const float thrusterPosOffset = 0.365f;
         this->particleEmitterLeft->data.origin = glm::vec4(vec3(this->position + (vec3(this->transform[0]) * -thrusterPosOffset)) + (vec3(this->transform[2]) * emitterOffset), 1);
         this->particleEmitterLeft->data.dir = glm::vec4(glm::vec3(-this->transform[2]), 0);
         this->particleEmitterRight->data.origin = glm::vec4(vec3(this->position + (vec3(this->transform[0]) * thrusterPosOffset)) + (vec3(this->transform[2]) * emitterOffset), 1);
         this->particleEmitterRight->data.dir = glm::vec4(glm::vec3(-this->transform[2]), 0);
-
         float t = (currentSpeed / this->normalSpeed);
         this->particleEmitterLeft->data.startSpeed = 1.2 + (3.0f * t);
         this->particleEmitterLeft->data.endSpeed = 0.0f + (3.0f * t);
         this->particleEmitterRight->data.startSpeed = 1.2 + (3.0f * t);
         this->particleEmitterRight->data.endSpeed = 0.0f + (3.0f * t);
-        //this->particleEmitter->data.decayTime = 0.16f;//+ (0.01f  * t);
-        //this->particleEmitter->data.randomTimeOffsetDist = 0.06f;/// +(0.01f * t);
+
+        timeSinceLastPacket += dt;
+    }
+
+    glm::vec3 SpaceShip::PredictPosition() {
+        return this->lastPosition + (this->lastVelocity * timeSinceLastPacket) + (0.5f * this->lastAcceleration * timeSinceLastPacket * timeSinceLastPacket);
+    }
+
+    void SpaceShip::ApplyInterpolation(float dt, float timeSinceLastPacket, const glm::vec3& predictedPosition) {
+        // Calculate interpolation factor (alpha)
+        float alpha = timeSinceLastPacket / dt; // Adjust based on your time management
+        alpha = glm::clamp(alpha, 0.0f, 1.0f); // Ensure alpha is in the valid range [0, 1]
+
+        // Interpolate between last known position and predicted position
+        glm::vec3 interpolatedPosition = glm::mix(this->lastPosition, predictedPosition, alpha);
+        this->position = interpolatedPosition; // Update the current position of the ship
+
+        // Update the transform matrix based on the new interpolated position
+        transform = glm::translate(glm::mat4(1.0f), this->position) * (glm::mat4)this->orientation;
     }
 
     bool SpaceShip::CheckCollisions()
