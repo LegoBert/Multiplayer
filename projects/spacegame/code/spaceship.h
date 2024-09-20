@@ -30,31 +30,6 @@ namespace Game
         float Speed = 10.0f;
         bool marked_for_deletion = false;
 
-        /*void Update(float dt)
-        {
-            position += (glm::vec3)direction * Speed * dt;
-            transform[3] = glm::vec4(position, 1);
-
-            uint64_t current_time = std::chrono::duration_cast<std::chrono::milliseconds>(std::chrono::system_clock::now().time_since_epoch()).count();
-            if (current_time >= end_time) {
-                marked_for_deletion = true;
-            }
-
-            // debug draw collision rays
-            Debug::DrawLine(position - (glm::vec3)direction * 0.5f, position + (glm::vec3)direction * 0.5f, 1.0f, glm::vec4(0, 1, 0, 1), glm::vec4(0, 1, 0, 1), Debug::RenderMode::AlwaysOnTop);
-        }
-
-        bool CheckCollisions()
-        {
-            Physics::RaycastPayload payload = Physics::Raycast(position - (glm::vec3)direction * 0.5f, direction, 1);
-            if (payload.hit)
-            {
-                marked_for_deletion = true;
-            }
-
-            return payload.hit;
-        }*/
-
         void Update(float dt)
         {
             // Get the forward vector (Z-axis) from the quaternion direction
@@ -152,9 +127,11 @@ namespace Game
 
         void Update(float dt, uint32_t id);
 
+        void UpdateThrusters(float dt);
+
         glm::vec3 PredictPosition();
 
-        void ApplyInterpolation(float dt, float timeSinceLastPacket, const glm::vec3& predictedPosition);
+        void ApplyInterpolation(float dt);
 
         bool CheckCollisions();
 

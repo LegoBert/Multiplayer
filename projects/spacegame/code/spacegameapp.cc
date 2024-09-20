@@ -561,7 +561,7 @@ namespace Game
                     for (auto& ship : spaceShips) {
                         if (ship.uuid == packet->player()->uuid()) {
                             //ship.position = glm::vec3(position.x(), position.y(), position.z());
-                            ship.orientation = glm::quat(direction.w(), direction.x(), direction.y(), direction.z());
+                            //ship.orientation = glm::quat(direction.w(), direction.x(), direction.y(), direction.z());
                             //ship.transform = translate(ship.position) * (glm::mat4)ship.orientation;
                             ship.lastUpdateTime = time;
                             ship.lastPosition = glm::vec3(position.x(), position.y(), position.z());
